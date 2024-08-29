@@ -7,7 +7,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-polls = pd.read_csv('data/polls/president_polls_2024.csv')
+polls = pd.read_csv('https://projects.fivethirtyeight.com/polls-page/data/president_polls.csv')
 
 # Get dates
 dates = polls['end_date'].str.split('/')
