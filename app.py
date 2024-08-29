@@ -37,7 +37,7 @@ app.layout = html.Div(
         ),
         html.Hr(),
         html.Div(
-            children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/')],
+            children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/'), ' | See the code on ', dcc.Link(children=['Github'], href='https://github.com/Hackquantumcpp/camp')],
                       style={'textAlign':'center', 'font-family':'Lucida Console'}
         )
     ]
