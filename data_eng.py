@@ -1,0 +1,344 @@
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import scipy
+import warnings
+
+warnings.filterwarnings('ignore')
+
+polls = pd.read_csv('data/polls/president_polls_2024.csv')
+
+# Get dates
+dates = polls['end_date'].str.split('/')
+polls['end_month'] = dates.str[0].astype(int)
+polls['end_day'] = dates.str[1].astype(int)
+polls['end_year'] = dates.str[2].astype(int)
+
+# Get just recent polls (polls on or after July 1)
+rel_polls = polls[(((polls['end_month'] >= 7) & (polls['end_day'] >= 1)) | (polls['end_month'] == 8)) & (polls['end_year'] == 24)
+                 & (polls['candidate_name'].isin(['Kamala Harris', 'Donald Trump', 'Robert F. Kennedy', 'Jill Stein', 
+                                                  'Cornel West', 'Chase Oliver', 'Claudia de la Cruz']))]
+
+# Only high-quality, nonpartisan polls
+polls_np = rel_polls[rel_polls['numeric_grade'] >= 2.2][rel_polls['partisan'].isna()] # [rel_polls['population'] == 'lv']
+
+# Fill 'NA' values in 'state' with 'National'
+polls_np['state'] = polls_np['state'].fillna('National')
+
+# Prepare the dataframe as a time series
+polls_np['end_date_TS'] = pd.to_datetime(polls_np['end_date'])
+
+polls_pivot = pd.pivot_table(data=polls_np, values='pct', index=['poll_id', 'state', 'population', 'sample_size', 'end_date_TS'], 
+                             columns=['candidate_name'], 
+                             aggfunc='last', fill_value='NA').reset_index()
+
+def pipeline(data: pd.DataFrame) -> pd.DataFrame:
+    # Preferring likely voter samples in polls with multiple samples
+    # Find duplicated poll IDs
+    # Source for code: 
+    # https://stackoverflow.com/questions/14657241/how-do-i-get-a-list-of-all-the-duplicate-items-using-pandas-in-python
+    ids = data['poll_id']
+    duplicate_polls = data[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
+    unique_polls = data[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
+    dup_polls_lv = duplicate_polls[duplicate_polls['population'] == 'lv']
+    df = pd.concat([unique_polls, dup_polls_lv], axis=0)
+    
+    ids = df['poll_id']
+    duplicate_polls = df[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
+    unique_polls = df[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
+    dup_polls_3rd_party = duplicate_polls[duplicate_polls['Jill Stein'] != 'NA']
+    df_final = pd.concat([unique_polls, dup_polls_3rd_party], axis=0)
+    
+    if ((df_final['Kamala Harris'] == 'NA') | (df_final['Donald Trump'] == 'NA')).any():
+        df_final = df_final[~((df_final['Kamala Harris'] == 'NA') | (df_final['Donald Trump'] == 'NA'))]
+    
+    # By convention, positive margins indicate Harris advantage, while negative margins indicate Trump advantage.
+    df_final['Margin'] = df_final['Kamala Harris'] - df_final['Donald Trump']
+    
+    return df_final
+
+polls_pivot = pipeline(polls_pivot).drop(['population'], axis=1)
+
+# For state polling averages
+
+def produce_raw_df(data: pd.DataFrame) -> pd.DataFrame:
+    polls_pivot_raw = data.copy().replace({'NA':0}).drop(['Margin'], axis=1)# .drop(['end_date_TS'], axis=1)
+    raw_numbers = polls_pivot_raw[[
+        'Chase Oliver', 'Cornel West', 'Donald Trump', 'Jill Stein', 'Kamala Harris', 'Robert F. Kennedy'
+    ]].multiply(polls_pivot_raw['sample_size'] * 0.01, axis='index')
+    polls_pivot_raw[['Chase Oliver', 'Cornel West', 'Donald Trump', 'Jill Stein', 'Kamala Harris',
+                     'Robert F. Kennedy']] = raw_numbers
+    
+    return polls_pivot_raw
+
+polls_pivot_raw = produce_raw_df(polls_pivot)
+polls_pivot_raw_full = polls_pivot_raw.copy()
+polls_pivot_raw = polls_pivot_raw[polls_pivot_raw['end_date_TS'] >= pd.to_datetime('2024-07-24')]
+
+# By convention, positive margins indicate Harris advantage, while negative margins indicate Trump advantage.
+# Utilizing weighted averages taking sample size into account
+# states = polls_pivot[['state', 'Margin']].groupby(['state']).agg({'Margin':'mean'})
+states = polls_pivot_raw.drop(['poll_id'], axis=1).groupby(['state'])[['Kamala Harris', 'Donald Trump', 'sample_size']].sum()
+states[['Kamala Harris', 'Donald Trump']] = states[['Kamala Harris', 'Donald Trump']].multiply(1 / states['sample_size'],
+                                                                                               axis='index')
+states['Margin'] = (states['Kamala Harris'] - states['Donald Trump']) * 100
+states = states.drop(['sample_size', 'Kamala Harris', 'Donald Trump'], axis=1)
+
+def margin_rating(margin):
+    abs_margin = abs(margin)
+    if abs_margin >= 15:
+        rating = 'Solid'
+    elif abs_margin < 15 and abs_margin >= 5:
+        rating = 'Likely'
+    elif abs_margin < 5 and abs_margin >= 2:
+        rating = 'Lean'
+    else:
+        rating = 'Tossup'
+    
+    if rating != 'Tossup':
+        if margin < 0:
+            direc = ' R'
+        else:
+            direc =  ' D'
+    else:
+        direc = ''
+    
+    return rating + direc
+
+def margin_with_party(margin):
+    if margin < 0:
+        direc = 'R'
+    else:
+        direc = 'D'
+    return direc + '+' + f'{abs(margin):.1f}'
+
+states['Rating'] = states['Margin'].map(margin_rating)
+states['Label'] = states['Margin'].map(margin_with_party)
+
+
+
+import os
+import geopandas as gpd
+
+gdf = gpd.read_file(os.getcwd()+'/cb_2018_us_state_500k')
+gdf = gdf.merge(states.reset_index(), left_on='NAME',right_on='state')
+# print(gdf)
+states = gdf[['STUSPS', 'state', 'Margin', 'Rating', 'Label']]
+states['margin_for_choropleth'] = states['Margin'].map(lambda x: min(x, 20))
+
+
+
+# National polling averages over time
+polling_avgs_by_day = polls_pivot_raw_full.drop(['poll_id'], axis=1).groupby(['end_date_TS', 'state']).sum()
+polling_avgs_by_day[['Chase Oliver', 'Cornel West', 'Donald Trump', 'Jill Stein',
+                    'Kamala Harris', 'Robert F. Kennedy']] = polling_avgs_by_day[['Chase Oliver', 'Cornel West', 
+                                                                                  'Donald Trump', 
+                                                                                  'Jill Stein', 'Kamala Harris', 
+                                                                                  'Robert F. Kennedy']].multiply(100 / polling_avgs_by_day['sample_size'], 
+                                                                                                                 axis='index')
+
+polling_avgs = polling_avgs_by_day.reset_index()
+
+national_polling_avgs = polling_avgs[polling_avgs['state'] == 'National']
+
+from statsmodels.nonparametric.smoothers_lowess import lowess
+
+# polls_ts = pd.pivot_table(data=polls_np, values='pct', index=['poll_id', 'end_date_TS', 'state'], columns=['candidate_name'],
+#                          aggfunc='first', fill_value='NA')
+
+# Utilizing the polls_pivot dataframe, which has been feature engineered to prefer likely voter samples in polls with
+# multiple samples to registered voter and all adult samples.
+polls_ts = polls_pivot.copy()
+nat_polls_ts = polls_ts[polls_ts['state'] == 'National']
+# # No NA values
+nat_polls_ts = nat_polls_ts[~((nat_polls_ts['Kamala Harris'] == 'NA') | (nat_polls_ts['Donald Trump'] == 'NA'))]
+nat_polls_ts['Kamala Harris'] = nat_polls_ts['Kamala Harris'].map(float)
+harris_nat = nat_polls_ts['Kamala Harris'].to_numpy()
+trump_nat = nat_polls_ts['Donald Trump'].to_numpy()
+dates = nat_polls_ts['end_date_TS'].to_numpy()
+trump_lowess = lowess(trump_nat, dates, frac=0.4, it=5, return_sorted=True)
+harris_lowess = lowess(harris_nat, dates, frac=0.4, it=5, return_sorted=True)
+dates_lowess = pd.to_datetime(trump_lowess[:, 0])
+nat_polls_ts_ind = nat_polls_ts.groupby(['end_date_TS'])[['Kamala Harris', 'Donald Trump']].mean()
+# Calculate exponential weighted moving average
+harris_ewma = nat_polls_ts_ind['Kamala Harris'].ewm(alpha=0.1).mean()
+trump_ewma = nat_polls_ts_ind['Donald Trump'].ewm(alpha=0.1).mean()
+harris_ewma_std = nat_polls_ts_ind['Kamala Harris'].ewm(alpha=0.1).std()
+trump_ewma_std = nat_polls_ts_ind['Donald Trump'].ewm(alpha=0.1).std()
+harris_lowess_df = pd.DataFrame(harris_lowess)
+harris_lowess_df[0] = harris_lowess_df[0].map(pd.to_datetime)
+harris_lowess_df = harris_lowess_df.set_index(0)
+harris_curves = pd.DataFrame(harris_ewma).join(harris_lowess_df, how='outer').rename({'Kamala Harris':'Harris EWMA',
+                                                                                     1:'Harris Lowess'}, axis=1).reset_index()
+harris_curves = harris_curves.groupby(['index']).mean()
+# harris_curves
+trump_lowess_df = pd.DataFrame(trump_lowess)
+trump_lowess_df[0] = trump_lowess_df[0].map(pd.to_datetime)
+trump_lowess_df = trump_lowess_df.set_index(0)
+trump_curves = pd.DataFrame(trump_ewma).join(trump_lowess_df, how='outer').rename({'Donald Trump':'Trump EWMA',
+                                                                                     1:'Trump Lowess'}, axis=1).reset_index()
+trump_curves = trump_curves.groupby(['index']).mean()
+# trump_curves
+def polling_average(lowess, ewma, mixing_param=0):
+    """
+    Calculate weighted average of LOWESS and EWMA curve.
+    :param mixing_param: Mixing parameter. The mixing parameter is added to the LOWESS weight and subtracted from
+    the EWMA weight.
+    """
+    return (0.5 + mixing_param) * lowess + (0.5 - mixing_param) * ewma
+# Just use only LOWESS for now, I am tired
+harris_ts = polling_average(harris_curves['Harris Lowess'], harris_curves['Harris EWMA'], mixing_param=0.5)
+trump_ts = polling_average(trump_curves['Trump Lowess'], trump_curves['Trump EWMA'], mixing_param=0.5)
+harris_curves['polling_avg'] = harris_ts
+trump_curves['polling_avg'] = trump_ts
+# dates_ts = np.union1d(dates_lowess, )
+# harris_ts, trump_ts
+# Calculating margin of error (95% confidence intervals)
+# Code from: https://james-brennan.github.io/posts/lowess_conf/
+def smooth(x, y, xgrid):
+    samples = np.random.choice(len(x), 50, replace=True)
+    y_s = y[samples]
+    x_s = x[samples]
+    y_sm = lowess(y_s,x_s, frac=0.4, it=5,
+                     return_sorted = False)
+#     y_ewma = pd.DataFrame(y).ewm(com=9).mean()
+    
+#     y_low_df = pd.DataFrame(y_lowess)
+#     y_low_df[0] = y_low_df[0].map(pd.to_datetime)
+#     y_sm = polling_average(y_lowess, y_ewma, mixing_param=0.1)
+    # regularly sample it onto the grid
+    y_grid = scipy.interpolate.interp1d(x_s, y_sm, 
+                                        fill_value='extrapolate')(xgrid)
+    return y_grid
+
+dates_num = pd.to_numeric(dates)
+xgrid = np.linspace(dates_num.min(), dates_num.max())
+dates_grid = pd.to_datetime(xgrid)
+K = 100
+harris_smooths = np.stack([smooth(dates_num, harris_nat, xgrid) for k in range(K)]).T
+trump_smooths = np.stack([smooth(dates_num, trump_nat, xgrid) for k in range(K)]).T
+# Code from: https://james-brennan.github.io/posts/lowess_conf/
+mean_h = np.nanmean(harris_smooths, axis=1)
+stderr_h = scipy.stats.sem(harris_smooths, axis=1)
+stderr_h = np.nanstd(harris_smooths, axis=1, ddof=0)
+# Code from: https://james-brennan.github.io/posts/lowess_conf/
+mean_t = np.nanmean(trump_smooths, axis=1)
+stderr_t = scipy.stats.sem(trump_smooths, axis=1)
+stderr_t = np.nanstd(trump_smooths, axis=1, ddof=0)
+harris_trump_data = harris_curves.join(trump_curves, how='outer', lsuffix='_harris', rsuffix='_trump')
+harris_trump_data = harris_trump_data[['polling_avg_harris', 'polling_avg_trump']].reset_index().rename(
+    {'polling_avg_harris':'Kamala Harris',
+     'polling_avg_trump':'Donald Trump',
+    'index':'Date'}, axis=1)
+
+nat_polls_ts_readable = nat_polls_ts.rename({'end_date_TS':'Date'}, axis=1)
+
+# Interpolation
+import datetime
+dates_range = pd.date_range(start=harris_curves.index.min(), end=harris_curves.index.max(),freq='d',
+                           inclusive='both')
+dates_range_num = pd.to_numeric(dates_range)
+harris_interp = scipy.interpolate.interp1d(pd.to_numeric(harris_curves.index.to_numpy()), 
+                                           harris_curves['polling_avg'].to_numpy())(dates_range_num)
+trump_interp = scipy.interpolate.interp1d(pd.to_numeric(trump_curves.index.to_numpy()), 
+                                           trump_curves['polling_avg'].to_numpy())(dates_range_num)
+harris_interp, trump_interp
+harris_trump_data_interp = pd.DataFrame([harris_interp, trump_interp, dates_range]).T.rename(columns={0:'Kamala Harris',
+                                                                                                   1: 'Donald Trump',
+                                                                                                   2:'Date'})
+
+# Plots
+# fig_line = px.line(data_frame=harris_trump_data, x='Date', y=['Kamala Harris', 'Donald Trump'], 
+#                    title='Harris vs. Trump National Polling', markers=False)
+
+fig_line = px.line(data_frame=harris_trump_data_interp, x='Date', y=['Kamala Harris', 'Donald Trump'], 
+                   title='Harris vs. Trump National Polling', markers=False)
+# fig_line.show()
+
+fig_scatter = px.scatter(data_frame=nat_polls_ts_readable, x='Date', y=['Kamala Harris', 'Donald Trump'], opacity=0.5)
+# fig_scatter.show()
+
+fig_harris_CI = go.Figure([
+    go.Scatter(
+        name='Harris CI Upper Bound',
+        x = dates_grid,
+        y = mean_h + 1.96*stderr_h,
+        mode='lines',
+        marker=dict(color='#8972fc'),
+        line=dict(width=0),
+        showlegend=False,
+        hoverinfo='skip'
+    ),
+    go.Scatter(
+        name='Harris CI Lower Bound',
+        x = dates_grid,
+        y = mean_h - 1.96*stderr_h,
+        mode='lines',
+        marker=dict(color='#8972fc'),
+        line=dict(width=0),
+        fill='tonexty',
+        fillcolor='rgba(137, 114, 252, 0.15)',
+        showlegend=False,
+        hoverinfo='skip'
+    )
+    
+])
+
+fig_trump_CI = go.Figure([
+    go.Scatter(
+        name='Trump CI Upper Bound',
+        x = dates_grid,
+        y = mean_t + 1.96*stderr_t,
+        mode='lines',
+        marker=dict(color='#fc7472'),
+        line=dict(width=0),
+        showlegend=False,
+        hoverinfo='skip'
+    ),
+    go.Scatter(
+        name='Trump CI Lower Bound',
+        x = dates_grid,
+        y = mean_t - 1.96*stderr_t,
+        mode='lines',
+        marker=dict(color='#fc7472'),
+        line=dict(width=0),
+        fill='tonexty',
+        fillcolor='rgba(252, 116, 114, 0.15)',
+        showlegend=False,
+        hoverinfo='skip'
+    )
+    
+])
+
+fig = go.Figure(data=fig_line.data + fig_scatter.data + fig_harris_CI.data + fig_trump_CI.data)
+
+fig.update_layout(
+    title='Harris v. Trump Polling for the 2024 Presidential Election',
+    xaxis_title = 'Date',
+    yaxis_title = 'Polled Vote %',
+    legend_title = 'Legend',
+)
+
+fig.add_vline(x=datetime.datetime.strptime("2024-07-21", "%Y-%m-%d").timestamp() * 1000, line_dash='dot', 
+              annotation_text='Biden drops out', annotation_position='top right')
+
+fig.show()
+
+fig_states = px.choropleth(data_frame=states.reset_index(), locations='STUSPS', locationmode='USA-states', 
+                           color='margin_for_choropleth',
+                          color_continuous_scale='RdBu', range_color=[-20, 20], hover_name='state', 
+                          hover_data={'STUSPS':False, 'Rating':True, 'Margin':False, 'Label':True, 
+                                      'margin_for_choropleth':False},
+                          labels={'Label':'Average Margin'}, width=1400, height=1000)
+fig_states.update_layout(
+    title_text = '2024 US Presidential Election State Polling Averages',
+    geo_scope='usa', # limit map scope to USA
+)
+
+fig_states.update_layout(coloraxis_colorbar=dict(
+    title='Margin',
+    tickvals=[-20, -10, 0, 10, 20],
+    ticktext=['>R+20', 'R+10', 'EVEN', 'D+10', '>D+20']
+))
+states = states.rename({'Margin':'Average Polling Margin'}, axis=1)
