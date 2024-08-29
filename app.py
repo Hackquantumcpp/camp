@@ -13,7 +13,7 @@ server = app.server
 app.layout = html.Div(
     children=[
         html.H1(
-            children='Centralized Aggregate and Mean of Polls (CAMP)',
+            children='Centralized Aggregate and Model of Polls (CAMP)',
             style={'textAlign':'center', 'font-family':'Lucida Console'}
         ),
         html.Hr(),
