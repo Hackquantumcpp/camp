@@ -2,7 +2,6 @@ from dash import Dash, html, dcc, dash_table
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
 
 # Import our data engineering and plot structuring file data_eng.py
 from data_eng import *
@@ -44,4 +43,4 @@ app.layout = html.Div(
 )
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
