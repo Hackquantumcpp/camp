@@ -21,6 +21,10 @@ app.layout = html.Div(
             children='National Polling Averages and Trends, US Presidential 2024',
             style={'textAlign':'center', 'font-family':'Lucida Console'}
         ),
+        html.H5(
+            children='Last updated: August 29, 2024',
+            style={'textAlign':'center', 'font-family':'Lucida Console'}
+        ),
         dcc.Graph(
             id='polling-lowesses',
             figure=fig
