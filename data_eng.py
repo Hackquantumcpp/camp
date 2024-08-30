@@ -117,14 +117,11 @@ states['Rating'] = states['Margin'].map(margin_rating)
 states['Label'] = states['Margin'].map(margin_with_party)
 states_preproc = states.copy()
 
+states_ec = pd.read_csv('data/other/electoral-votes-by-state-2024.csv')
+states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_College_Votes'], axis=1)
 
-import os
-import geopandas as gpd
 
-gdf = gpd.read_file(os.getcwd()+'/cb_2018_us_state_500k')
-gdf = gdf.merge(states.reset_index(), left_on='NAME',right_on='state')
-# print(gdf)
-states = gdf[['STUSPS', 'state', 'Margin', 'Rating', 'Label']]
+states = states.reset_index().merge(states_ec, on='state').merge(states_abb, left_on='state', right_on='Full_State')
 states['margin_for_choropleth'] = states['Margin'].map(lambda x: min(x, 20))
 
 states_preproc = states_preproc.reset_index()
@@ -132,9 +129,33 @@ competitive = states_preproc[states_preproc['state'].isin(['Arizona', 'Georgia',
                                                            'Michigan', 'Wisconsin', 'North Carolina', 'Minnesota',
                                           'Nevada', 'Texas', 'Florida', 'New Hampshire', 'Maine', 'Maine CD-2',
                                                           'Nebraska CD-2', 'Virginia', 'New Mexico'])]
-competitive = competitive.sort_values(by=['Margin'], ascending=False)
-leader = lambda x: 'R' if x < 0 else 'D'
-competitive['leader'] = competitive['Margin'].map(leader)
+competitive = competitive.sort_values(by=['Margin'], ascending=False).merge(states_ec, on='state')
+leader = lambda x: 'Republicans' if x < 0 else 'Democrats'
+competitive['Leader'] = competitive['Margin'].map(leader)
+
+harris_polled_ev = 191 + competitive[competitive['Leader'] == 'Democrats']['ElectoralVotes'].sum()
+trump_polled_ev = 148 + competitive[competitive['Leader'] == 'Republicans']['ElectoralVotes'].sum()
+def find_tipping_point():
+    if harris_polled_ev > trump_polled_ev:
+        df = competitive[competitive['Leader'] == 'Democrats'].copy()
+        curr = harris_polled_ev
+    elif trump_polled_ev > harris_polled_ev:
+        df = competitive[competitive['Leader'] == 'Republicans'].copy()
+        curr = trump_polled_ev
+    else:
+        return 'Tie'
+    df['Margin'] = df['Margin'].map(abs)
+    df = df.sort_values(by=['Margin'])
+    new_df = df.copy().reset_index()
+    # print(new_df)
+    while curr > 269:
+        # print(new_df.iloc[0, 5])
+        curr -= new_df.iloc[0, 5]
+        new_df = new_df[1:]
+    return new_df.iloc[0, 1]
+
+tp_state = find_tipping_point()
+tp_margin = states[states['state'] == tp_state]['Margin'].values[0]
 
 
 
@@ -333,10 +354,10 @@ fig.add_vline(x=datetime.datetime.strptime("2024-07-21", "%Y-%m-%d").timestamp()
 
 fig.show()
 
-fig_states = px.choropleth(data_frame=states.reset_index(), locations='STUSPS', locationmode='USA-states', 
+fig_states = px.choropleth(data_frame=states.reset_index(), locations='Abb_State', locationmode='USA-states', 
                            color='margin_for_choropleth',
                           color_continuous_scale='RdBu', range_color=[-20, 20], hover_name='state', 
-                          hover_data={'STUSPS':False, 'Rating':True, 'Margin':False, 'Label':True, 
+                          hover_data={'Abb_State':False, 'Rating':True, 'Margin':False, 'Label':True, 
                                       'margin_for_choropleth':False},
                           labels={'Label':'Average Margin'}, width=1400, height=1000)
 fig_states.update_layout(
@@ -351,9 +372,15 @@ fig_states.update_layout(coloraxis_colorbar=dict(
 ))
 states = states.rename({'Margin':'Average Polling Margin'}, axis=1)
 
-fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='leader')
+fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='Leader')
 
 fig_comp.update_layout(
     title='Margins in Competitive States',
     yaxis_title='State'
 )
+
+# EC Bias
+avg_lowess_diff = harris_trump_data_interp['Kamala Harris'].to_numpy()[-1] - harris_trump_data_interp['Donald Trump'].to_numpy()[-1]
+nat_diff = ('Harris' if avg_lowess_diff > 0 else 'Trump') + '+' + f'{abs(avg_lowess_diff):.2f}%'
+ec_bias = tp_margin - avg_lowess_diff
+ec_bias_pres = ('D' if ec_bias > 0 else 'R') + '+' + f'{abs(ec_bias):.2f}%'
