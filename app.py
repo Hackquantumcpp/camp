@@ -34,6 +34,10 @@ app.layout = html.Div(
             id='state-polling',
             figure=fig_states
         ),
+        dcc.Graph(
+            id='competitive-state-polling',
+            figure=fig_comp
+        ),
         html.Hr(),
         html.Div(
             children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/'), ' | See the code on ', dcc.Link(children=['Github'], href='https://github.com/Hackquantumcpp/camp')],

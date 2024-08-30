@@ -115,7 +115,7 @@ def margin_with_party(margin):
 
 states['Rating'] = states['Margin'].map(margin_rating)
 states['Label'] = states['Margin'].map(margin_with_party)
-
+states_preproc = states.copy()
 
 
 import os
@@ -126,6 +126,15 @@ gdf = gdf.merge(states.reset_index(), left_on='NAME',right_on='state')
 # print(gdf)
 states = gdf[['STUSPS', 'state', 'Margin', 'Rating', 'Label']]
 states['margin_for_choropleth'] = states['Margin'].map(lambda x: min(x, 20))
+
+states_preproc = states_preproc.reset_index()
+competitive = states_preproc[states_preproc['state'].isin(['Arizona', 'Georgia', 'Pennsylvania', 
+                                                           'Michigan', 'Wisconsin', 'North Carolina', 'Minnesota',
+                                          'Nevada', 'Texas', 'Florida', 'New Hampshire', 'Maine', 'Maine CD-2',
+                                                          'Nebraska CD-2', 'Virginia', 'New Mexico'])]
+competitive = competitive.sort_values(by=['Margin'], ascending=False)
+leader = lambda x: 'R' if x < 0 else 'D'
+competitive['leader'] = competitive['Margin'].map(leader)
 
 
 
@@ -243,7 +252,6 @@ harris_interp = scipy.interpolate.interp1d(pd.to_numeric(harris_curves.index.to_
                                            harris_curves['polling_avg'].to_numpy())(dates_range_num)
 trump_interp = scipy.interpolate.interp1d(pd.to_numeric(trump_curves.index.to_numpy()), 
                                            trump_curves['polling_avg'].to_numpy())(dates_range_num)
-harris_interp, trump_interp
 harris_trump_data_interp = pd.DataFrame([harris_interp, trump_interp, dates_range]).T.rename(columns={0:'Kamala Harris',
                                                                                                    1: 'Donald Trump',
                                                                                                    2:'Date'})
@@ -342,3 +350,10 @@ fig_states.update_layout(coloraxis_colorbar=dict(
     ticktext=['>R+20', 'R+10', 'EVEN', 'D+10', '>D+20']
 ))
 states = states.rename({'Margin':'Average Polling Margin'}, axis=1)
+
+fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='leader')
+
+fig_comp.update_layout(
+    title='Margins in Competitive States',
+    yaxis_title='State'
+)
