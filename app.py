@@ -16,6 +16,7 @@ app.layout = html.Div(
             children='Centralized Aggregate and Model of Polls (CAMP)',
             style={'textAlign':'center', 'font-family':'Lucida Console'}
         ),
+        html.H4(children='Last Updated: August 30, 2024', style={'textAlign':'center', 'font-family':'Lucida Console'}),
         html.Hr(),
         html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
         html.Div(
@@ -49,6 +50,10 @@ app.layout = html.Div(
         dcc.Graph(
             id='polling-lowesses',
             figure=fig
+        ),
+        html.H4(children='National Polls Utilized', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+        dash_table.DataTable(
+            data=nat_readable.sort_values(by=['Date'], ascending=False).to_dict('records'), page_size=10
         ),
         html.Hr(),
         html.H2(

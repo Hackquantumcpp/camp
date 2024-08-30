@@ -30,7 +30,7 @@ polls_np['state'] = polls_np['state'].fillna('National')
 # Prepare the dataframe as a time series
 polls_np['end_date_TS'] = pd.to_datetime(polls_np['end_date'])
 
-polls_pivot = pd.pivot_table(data=polls_np, values='pct', index=['poll_id', 'state', 'population', 'sample_size', 'end_date_TS'], 
+polls_pivot = pd.pivot_table(data=polls_np, values='pct', index=['poll_id', 'state', 'population', 'sample_size', 'end_date_TS', 'pollster_rating_name'], 
                              columns=['candidate_name'], 
                              aggfunc='last', fill_value='NA').reset_index()
 
@@ -59,7 +59,22 @@ def pipeline(data: pd.DataFrame) -> pd.DataFrame:
     
     return df_final
 
-polls_pivot = pipeline(polls_pivot).drop(['population'], axis=1)
+
+polls_pivot = pipeline(polls_pivot)
+
+polls_pivot_with_pollster = polls_pivot.copy()
+polls_pivot = polls_pivot.drop(['pollster_rating_name'], axis=1)
+polls_with_pollster_readable = polls_pivot_with_pollster.drop(['poll_id'], axis=1).rename({'end_date_TS':'Date',
+                                                                                          'pollster_rating_name':'Pollster'}, axis=1)
+polls_with_pollster_readable['population'] = polls_with_pollster_readable['population'].str.upper()
+polls_with_pollster_readable['Sample'] = polls_with_pollster_readable['sample_size'].astype(int).astype(str) + ' ' + polls_with_pollster_readable['population']
+polls_with_pollster_readable = polls_with_pollster_readable.drop(['sample_size', 'population'], axis=1)
+nat_readable = polls_with_pollster_readable[polls_with_pollster_readable['state'] == 'National'][['Date', 'Pollster', 'Sample',
+                                                                                                 'Kamala Harris', 'Donald Trump',
+                                                                                                 'Robert F. Kennedy', 'Jill Stein',
+                                                                                                 'Cornel West', 'Chase Oliver']]
+
+polls_pivot = polls_pivot.drop(['population'], axis=1)
 
 # For state polling averages
 
