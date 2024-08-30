@@ -21,6 +21,7 @@ rel_polls = polls[(((polls['end_month'] >= 7) & (polls['end_day'] >= 1)) | (poll
                                                   'Cornel West', 'Chase Oliver', 'Claudia de la Cruz']))]
 
 # Only high-quality, nonpartisan polls
+# Utilizing an arbitrary cutoff of 2.2
 polls_np = rel_polls[rel_polls['numeric_grade'] >= 2.2][rel_polls['partisan'].isna()] # [rel_polls['population'] == 'lv']
 
 # Fill 'NA' values in 'state' with 'National'
