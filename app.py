@@ -83,6 +83,21 @@ def serve_layout():
                 id='competitive-state-polling',
                 figure=de.fig_comp
             ),
+            html.H4(
+                children='State Polls Utilized',
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            dcc.RadioItems(
+                options=['All', 'Pennsylvania', 'Georgia', 'Arizona', 'North Carolina', 'Michigan', 'Wisconsin'],
+                value='All',
+                id='state-filter',
+                inline=True,
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            html.Br(),
+            dash_table.DataTable(
+                page_size=10, id='state-polls-table'
+            ),
             html.Hr(),
             html.Div(
                 children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/'), ' | See the code on ', dcc.Link(children=['Github'], href='https://github.com/Hackquantumcpp/camp')],
@@ -92,6 +107,16 @@ def serve_layout():
     )
 
 app.layout = serve_layout
+
+@callback(
+    Output(component_id='state-polls-table', component_property='data'),
+    Input(component_id='state-filter', component_property='value')
+)
+def filter_state_polls_table(val):
+    if val == 'All':
+        return de.state_readable.sort_values(by=['Date'], ascending=False).to_dict('records')
+    else:
+        return de.state_readable[de.state_readable['State'] == val].sort_values(by=['Date'], ascending=False).to_dict('records')
 
 # Live updates
 

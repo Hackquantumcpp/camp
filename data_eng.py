@@ -73,6 +73,10 @@ nat_readable = polls_with_pollster_readable[polls_with_pollster_readable['state'
                                                                                                  'Kamala Harris', 'Donald Trump',
                                                                                                  'Robert F. Kennedy', 'Jill Stein',
                                                                                                  'Cornel West', 'Chase Oliver']]
+state_readable = polls_with_pollster_readable[polls_with_pollster_readable['state'] != 'National'][['Date', 'Pollster', 'state', 'Sample',
+                                                                                                 'Kamala Harris', 'Donald Trump',
+                                                                                                 'Robert F. Kennedy', 'Jill Stein',
+                                                                                                 'Cornel West', 'Chase Oliver']].rename({'state':'State'}, axis=1)
 
 polls_pivot = polls_pivot.drop(['population'], axis=1)
 
@@ -240,6 +244,20 @@ harris_curves['polling_avg'] = harris_ts
 trump_curves['polling_avg'] = trump_ts
 # dates_ts = np.union1d(dates_lowess, )
 # harris_ts, trump_ts
+
+# Interpolation
+import datetime
+dates_range = pd.date_range(start=harris_curves.index.min(), end=harris_curves.index.max(),freq='d',
+                           inclusive='both')
+dates_range_num = pd.to_numeric(dates_range)
+harris_interp = scipy.interpolate.interp1d(pd.to_numeric(harris_curves.index.to_numpy()), 
+                                           harris_curves['polling_avg'].to_numpy())(dates_range_num)
+trump_interp = scipy.interpolate.interp1d(pd.to_numeric(trump_curves.index.to_numpy()), 
+                                           trump_curves['polling_avg'].to_numpy())(dates_range_num)
+harris_trump_data_interp = pd.DataFrame([harris_interp, trump_interp, dates_range]).T.rename(columns={0:'Kamala Harris',
+                                                                                                   1: 'Donald Trump',
+                                                                                                   2:'Date'})
+
 # Calculating margin of error (95% confidence intervals)
 # Code from: https://james-brennan.github.io/posts/lowess_conf/
 def smooth(x, y, xgrid):
@@ -262,8 +280,8 @@ dates_num = pd.to_numeric(dates)
 xgrid = np.linspace(dates_num.min(), dates_num.max())
 dates_grid = pd.to_datetime(xgrid)
 K = 100
-harris_smooths = np.stack([smooth(dates_num, harris_nat, xgrid) for k in range(K)]).T
-trump_smooths = np.stack([smooth(dates_num, trump_nat, xgrid) for k in range(K)]).T
+harris_smooths = np.stack([smooth(dates_num, harris_nat, dates_range_num) for k in range(K)]).T
+trump_smooths = np.stack([smooth(dates_num, trump_nat, dates_range_num) for k in range(K)]).T
 # Code from: https://james-brennan.github.io/posts/lowess_conf/
 mean_h = np.nanmean(harris_smooths, axis=1)
 stderr_h = scipy.stats.sem(harris_smooths, axis=1)
@@ -280,18 +298,7 @@ harris_trump_data = harris_trump_data[['polling_avg_harris', 'polling_avg_trump'
 
 nat_polls_ts_readable = nat_polls_ts.rename({'end_date_TS':'Date'}, axis=1)
 
-# Interpolation
-import datetime
-dates_range = pd.date_range(start=harris_curves.index.min(), end=harris_curves.index.max(),freq='d',
-                           inclusive='both')
-dates_range_num = pd.to_numeric(dates_range)
-harris_interp = scipy.interpolate.interp1d(pd.to_numeric(harris_curves.index.to_numpy()), 
-                                           harris_curves['polling_avg'].to_numpy())(dates_range_num)
-trump_interp = scipy.interpolate.interp1d(pd.to_numeric(trump_curves.index.to_numpy()), 
-                                           trump_curves['polling_avg'].to_numpy())(dates_range_num)
-harris_trump_data_interp = pd.DataFrame([harris_interp, trump_interp, dates_range]).T.rename(columns={0:'Kamala Harris',
-                                                                                                   1: 'Donald Trump',
-                                                                                                   2:'Date'})
+
 
 # Plots
 # fig_line = px.line(data_frame=harris_trump_data, x='Date', y=['Kamala Harris', 'Donald Trump'], 
@@ -307,7 +314,7 @@ fig_scatter = px.scatter(data_frame=nat_polls_ts_readable, x='Date', y=['Kamala 
 fig_harris_CI = go.Figure([
     go.Scatter(
         name='Harris CI Upper Bound',
-        x = dates_grid,
+        x = dates_range,
         y = mean_h + 1.96*stderr_h,
         mode='lines',
         marker=dict(color='#8972fc'),
@@ -317,7 +324,7 @@ fig_harris_CI = go.Figure([
     ),
     go.Scatter(
         name='Harris CI Lower Bound',
-        x = dates_grid,
+        x = dates_range,
         y = mean_h - 1.96*stderr_h,
         mode='lines',
         marker=dict(color='#8972fc'),
@@ -333,7 +340,7 @@ fig_harris_CI = go.Figure([
 fig_trump_CI = go.Figure([
     go.Scatter(
         name='Trump CI Upper Bound',
-        x = dates_grid,
+        x = dates_range,
         y = mean_t + 1.96*stderr_t,
         mode='lines',
         marker=dict(color='#fc7472'),
@@ -343,7 +350,7 @@ fig_trump_CI = go.Figure([
     ),
     go.Scatter(
         name='Trump CI Lower Bound',
-        x = dates_grid,
+        x = dates_range,
         y = mean_t - 1.96*stderr_t,
         mode='lines',
         marker=dict(color='#fc7472'),
