@@ -203,8 +203,8 @@ nat_polls_ts['Kamala Harris'] = nat_polls_ts['Kamala Harris'].map(float)
 harris_nat = nat_polls_ts['Kamala Harris'].to_numpy()
 trump_nat = nat_polls_ts['Donald Trump'].to_numpy()
 dates = nat_polls_ts['end_date_TS'].to_numpy()
-trump_lowess = lowess(trump_nat, dates, frac=0.4, it=5, return_sorted=True)
-harris_lowess = lowess(harris_nat, dates, frac=0.4, it=5, return_sorted=True)
+trump_lowess = lowess(trump_nat, dates, frac=0.3, it=5, return_sorted=True)
+harris_lowess = lowess(harris_nat, dates, frac=0.3, it=5, return_sorted=True)
 dates_lowess = pd.to_datetime(trump_lowess[:, 0])
 nat_polls_ts_ind = nat_polls_ts.groupby(['end_date_TS'])[['Kamala Harris', 'Donald Trump']].mean()
 # Calculate exponential weighted moving average
@@ -246,7 +246,7 @@ def smooth(x, y, xgrid):
     samples = np.random.choice(len(x), 50, replace=True)
     y_s = y[samples]
     x_s = x[samples]
-    y_sm = lowess(y_s,x_s, frac=0.4, it=5,
+    y_sm = lowess(y_s,x_s, frac=0.3, it=5,
                      return_sorted = False)
 #     y_ewma = pd.DataFrame(y).ewm(com=9).mean()
     
