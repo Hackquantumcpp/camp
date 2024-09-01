@@ -114,9 +114,9 @@ app.layout = serve_layout
 )
 def filter_state_polls_table(val):
     if val == 'All':
-        return de.state_readable.sort_values(by=['Date'], ascending=False).to_dict('records')
+        return de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')].sort_values(by=['Date'], ascending=False).to_dict('records')
     else:
-        return de.state_readable[de.state_readable['State'] == val].sort_values(by=['Date'], ascending=False).to_dict('records')
+        return de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == val].sort_values(by=['Date'], ascending=False).to_dict('records')
 
 # Live updates
 
