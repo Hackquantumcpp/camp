@@ -266,30 +266,24 @@ def smooth(x, y, xgrid):
     x_s = x[samples]
     y_sm = lowess(y_s,x_s, frac=0.3, it=5,
                      return_sorted = False)
-#     y_ewma = pd.DataFrame(y).ewm(com=9).mean()
-    
-#     y_low_df = pd.DataFrame(y_lowess)
-#     y_low_df[0] = y_low_df[0].map(pd.to_datetime)
-#     y_sm = polling_average(y_lowess, y_ewma, mixing_param=0.1)
-    # regularly sample it onto the grid
     y_grid = scipy.interpolate.interp1d(x_s, y_sm, 
                                         fill_value='extrapolate')(xgrid)
     return y_grid
-
 dates_num = pd.to_numeric(dates)
 xgrid = np.linspace(dates_num.min(), dates_num.max())
 dates_grid = pd.to_datetime(xgrid)
 K = 100
 harris_smooths = np.stack([smooth(dates_num, harris_nat, dates_range_num) for k in range(K)]).T
 trump_smooths = np.stack([smooth(dates_num, trump_nat, dates_range_num) for k in range(K)]).T
-# Code from: https://james-brennan.github.io/posts/lowess_conf/
 mean_h = np.nanmean(harris_smooths, axis=1)
 stderr_h = scipy.stats.sem(harris_smooths, axis=1)
 stderr_h = np.nanstd(harris_smooths, axis=1, ddof=0)
-# Code from: https://james-brennan.github.io/posts/lowess_conf/
 mean_t = np.nanmean(trump_smooths, axis=1)
 stderr_t = scipy.stats.sem(trump_smooths, axis=1)
 stderr_t = np.nanstd(trump_smooths, axis=1, ddof=0)
+
+###############
+
 harris_trump_data = harris_curves.join(trump_curves, how='outer', lsuffix='_harris', rsuffix='_trump')
 harris_trump_data = harris_trump_data[['polling_avg_harris', 'polling_avg_trump']].reset_index().rename(
     {'polling_avg_harris':'Kamala Harris',
