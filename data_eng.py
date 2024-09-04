@@ -15,6 +15,10 @@ polls['end_month'] = dates.str[0].astype(int)
 polls['end_day'] = dates.str[1].astype(int)
 polls['end_year'] = dates.str[2].astype(int)
 
+# CNN correction
+# Based on: https://projects.fivethirtyeight.com/pollster-ratings/
+polls[polls['pollster'] == 'CNN/SSRS'] = polls[polls['pollster'] == 'CNN/SSRS'].fillna(2.0)
+
 # Get just recent polls (polls on or after July 1)
 rel_polls = polls[(((polls['end_month'] >= 7) & (polls['end_day'] >= 1)) | (polls['end_month'] == 8)) & (polls['end_year'] == 24)
                  & (polls['candidate_name'].isin(['Kamala Harris', 'Donald Trump', 'Robert F. Kennedy', 'Jill Stein', 
