@@ -17,7 +17,10 @@ polls['end_year'] = dates.str[2].astype(int)
 
 # CNN correction
 # Based on: https://projects.fivethirtyeight.com/pollster-ratings/
-polls[polls['pollster'] == 'CNN/SSRS'] = polls[polls['pollster'] == 'CNN/SSRS'].fillna(2.0)
+polls_wo_cnn = polls[polls['pollster'] != 'CNN/SSRS']
+polls_cnn_ssrs = polls[polls['pollster'] == 'CNN/SSRS']
+polls_cnn_ssrs['numeric_grade'] = polls_cnn_ssrs['numeric_grade'].fillna(2.0)
+polls = pd.concat([polls_wo_cnn, polls_cnn_ssrs], axis=0)
 
 # Get just recent polls (polls on or after July 1)
 rel_polls = polls[(((polls['end_month'] >= 7) & (polls['end_day'] >= 1)) | (polls['end_month'] == 8)) & (polls['end_year'] == 24)
@@ -172,9 +175,11 @@ def find_tipping_point():
     df = df.sort_values(by=['Margin'])
     new_df = df.copy().reset_index()
     # print(new_df)
-    while curr > 269:
+    while curr - new_df.iloc[0, 5] > 269:
         # print(new_df.iloc[0, 5])
+        # print(new_df.iloc[0, 1])
         curr -= new_df.iloc[0, 5]
+        # print(curr)
         new_df = new_df[1:]
     return new_df.iloc[0, 1]
 
