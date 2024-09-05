@@ -88,7 +88,7 @@ def serve_layout():
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
             ),
             dcc.RadioItems(
-                options=['All', 'Pennsylvania', 'Georgia', 'Arizona', 'North Carolina', 'Michigan', 'Wisconsin', 'Nevada'],
+                options=['All', 'Pennsylvania', 'Georgia', 'Arizona', 'North Carolina', 'Michigan', 'Wisconsin', 'Nevada', 'Maine CD-2'],
                 value='All',
                 id='state-filter',
                 inline=True,
