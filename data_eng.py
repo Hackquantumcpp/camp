@@ -31,7 +31,7 @@ rel_polls = polls[(((polls['end_month'] >= 7) & (polls['end_day'] >= 1)) | (poll
 # Only high-quality, nonpartisan polls
 # Utilizing an arbitrary cutoff of 2.0
 polls_np = rel_polls[rel_polls['numeric_grade'] >= 2.0][rel_polls['partisan'].isna()] # [rel_polls['population'] == 'lv']
-polls_for_state_avgs = rel_polls[rel_polls['numeric_grade'] >= 1.9][rel_polls['partisan'].isna()]
+polls_for_state_avgs = rel_polls[rel_polls['numeric_grade'] >= 1.5][rel_polls['partisan'].isna()]
 
 # Fill 'NA' values in 'state' with 'National'
 polls_np['state'] = polls_np['state'].fillna('National')
