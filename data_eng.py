@@ -469,7 +469,6 @@ fig.update_layout(
 fig.add_vline(x=datetime.datetime.strptime("2024-07-21", "%Y-%m-%d").timestamp() * 1000, line_dash='dot', 
               annotation_text='Biden drops out', annotation_position='top right')
 
-fig.show()
 
 fig_states = px.choropleth(data_frame=states.reset_index(), locations='Abb_State', locationmode='USA-states', 
                            color='margin_for_choropleth',
