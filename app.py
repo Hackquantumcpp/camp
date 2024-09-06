@@ -12,6 +12,54 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.COSMO])
 
 server = app.server
 
+##### OVERVIEW INFOCARDS #####
+polled_ev_card =dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children='Polled Electoral College', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.Div(children=f'Harris - {de.harris_polled_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#100d94'},
+                                id='harris-ev'),
+            html.Div(children=f'Trump - {de.trump_polled_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#940d0d'},
+                                id='trump-ev')
+        ]
+    ), style={'width':'18rem'}, color=('primary' if de.harris_polled_ev > de.trump_polled_ev else 'danger'), outline=True
+)
+
+nat_avg_card = dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children='National Polling Average', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.P(children=de.nat_diff, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#100d94' if de.avg_lowess_diff > 0 else '#940d0d')},
+                                id='nat-avg'),
+        ], style={'width':'18rem'}
+    ), color=('primary' if de.avg_lowess_diff > 0 else 'danger'), outline=True
+)
+
+tp_avg_card = dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children=f'Tipping Point Polling Average ({de.tp_state})', style={'textAlign':'center', 'font-family':'Lucida Console'},
+                                id='tipping_point'),
+            html.P(children=('Harris' if de.tp_margin >= 0 else 'Trump') + f'+{abs(de.tp_margin):.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console',
+                                                                                                                'color':('#100d94' if de.tp_margin > 0 else '#940d0d')},
+                                                                                                                id='tp_avg'),
+        ], style={'width':'18rem'}
+    ), color=('primary' if de.tp_margin > 0 else 'danger'), outline=True
+)
+
+ec_bias_card = dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children=f'Electoral College Bias', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.P(children=de.ec_bias_pres, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#100d94' if de.ec_bias > 0 else '#940d0d')},
+                                                                                                                id='ec-bias')
+        ],  style={'width':'18rem'}
+    ), color=('primary' if de.ec_bias > 0 else 'danger'), outline=True
+)
+
+##############################
+
+
 def serve_layout():
     return html.Div(
         children=[
@@ -32,34 +80,14 @@ def serve_layout():
             html.Br(),
             html.Div(
                 children=[
-                    html.Div(children=[
-                        html.H5(children='Polled Electoral College', style={'textAlign':'center', 'font-family':'Lucida Console'}),
-                        html.Div(children=f'Harris - {de.harris_polled_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#100d94'},
-                                id='harris-ev'),
-                        html.Div(children=f'Trump - {de.trump_polled_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#940d0d'},
-                                id='trump-ev')
-                    ], className='box'),
-                    html.Br(),
-                    html.Div(children=[
-                        html.H5(children='National Polling Average', style={'textAlign':'center', 'font-family':'Lucida Console'}),
-                        html.Div(children=de.nat_diff, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#100d94' if de.avg_lowess_diff > 0 else '#940d0d')},
-                                id='nat-avg'),
-                    ], className='box'),
-                    html.Br(),
-                    html.Div(children=[
-                        html.H5(children=f'Tipping Point Polling Average ({de.tp_state})', style={'textAlign':'center', 'font-family':'Lucida Console'},
-                                id='tipping_point'),
-                        html.Div(children=('Harris' if de.tp_margin >= 0 else 'Trump') + f'+{abs(de.tp_margin):.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console',
-                                                                                                                'color':('#100d94' if de.tp_margin > 0 else '#940d0d')},
-                                                                                                                id='tp_avg'),
-                    ], className='box'),
-                    html.Br(),
-                    html.Div(children=[
-                        html.H5(children=f'Electoral College Bias', style={'textAlign':'center', 'font-family':'Lucida Console'}),
-                        html.Div(children=de.ec_bias_pres, style={'textAlign':'center', 'font-family':'Lucida Console',
-                                                                                                                'color':('#100d94' if de.ec_bias > 0 else '#940d0d')},
-                                                                                                                id='ec-bias'),
-                    ], className='box')
+                    dbc.Row(
+                        [
+                            dbc.Col(polled_ev_card, width='auto'),
+                            dbc.Col(nat_avg_card, width='auto'),
+                            dbc.Col(tp_avg_card, width='auto'),
+                            dbc.Col(ec_bias_card, width='auto')
+                        ], style={'justify-content':'center'}
+                    )
                 ]
             ),
             html.Hr(),
