@@ -2,19 +2,20 @@ from dash import Dash, html, dcc, dash_table, Input, Output, callback
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import datetime
-import importlib
+import dash_bootstrap_components as dbc
+# import datetime
 
 # Import our data engineering and plot structuring file data_eng.py
 import data_eng as de
 
-app = Dash(__name__)
+app = Dash(__name__, external_stylesheets=[dbc.themes.SIMPLEX])
 
 server = app.server
 
 def serve_layout():
     return html.Div(
         children=[
+            html.Br(),
             html.H1(
                 children='Centralized Aggregate and Model of Polls (CAMP)',
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
@@ -28,6 +29,7 @@ def serve_layout():
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.Br(),
             html.Div(
                 children=[
                     html.Div(children=[
@@ -37,11 +39,13 @@ def serve_layout():
                         html.Div(children=f'Trump - {de.trump_polled_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#940d0d'},
                                 id='trump-ev')
                     ], className='box'),
+                    html.Br(),
                     html.Div(children=[
                         html.H5(children='National Polling Average', style={'textAlign':'center', 'font-family':'Lucida Console'}),
                         html.Div(children=de.nat_diff, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#100d94' if de.avg_lowess_diff > 0 else '#940d0d')},
                                 id='nat-avg'),
                     ], className='box'),
+                    html.Br(),
                     html.Div(children=[
                         html.H5(children=f'Tipping Point Polling Average ({de.tp_state})', style={'textAlign':'center', 'font-family':'Lucida Console'},
                                 id='tipping_point'),
@@ -49,6 +53,7 @@ def serve_layout():
                                                                                                                 'color':('#100d94' if de.tp_margin > 0 else '#940d0d')},
                                                                                                                 id='tp_avg'),
                     ], className='box'),
+                    html.Br(),
                     html.Div(children=[
                         html.H5(children=f'Electoral College Bias', style={'textAlign':'center', 'font-family':'Lucida Console'}),
                         html.Div(children=de.ec_bias_pres, style={'textAlign':'center', 'font-family':'Lucida Console',
@@ -67,9 +72,11 @@ def serve_layout():
                 figure=de.fig
             ),
             html.H4(children='National Polls Utilized', style={'textAlign':'center', 'font-family':'Lucida Console'}),
-            dash_table.DataTable(
-                data=de.nat_readable.sort_values(by=['Date'], ascending=False).to_dict('records'), page_size=10
-            ),
+            html.Div(dbc.Table.from_dataframe(
+                de.nat_readable.sort_values(by=['Date'], ascending=False), striped=True, bordered=True, hover=True, 
+                responsive=True,
+                style={'font-family':'monospace'}, 
+            ), style={'maxHeight':'400px', 'overflow':'scroll'}),
             html.Hr(),
             html.H2(
                 children='State Polling, US Presidential 2024',
@@ -87,17 +94,16 @@ def serve_layout():
                 children='State Polls Utilized',
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
             ),
-            dcc.RadioItems(
+            dcc.Dropdown(
                 options=['All', 'Pennsylvania', 'Georgia', 'Arizona', 'North Carolina', 'Michigan', 'Wisconsin', 'Nevada', 'Maine CD-2'],
                 value='All',
                 id='state-filter',
-                inline=True,
+                # inline=True,
+                searchable=True,
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
             ),
-            html.Br(),
-            dash_table.DataTable(
-                page_size=10, id='state-polls-table'
-            ),
+            # html.Br(),
+            html.Div(id='state-polls-table', style={'maxHeight':'400px', 'overflow':'scroll'}),
             html.Hr(),
             html.Div(
                 children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/'), ' | See the code on ', dcc.Link(children=['Github'], href='https://github.com/Hackquantumcpp/camp')],
@@ -109,14 +115,17 @@ def serve_layout():
 app.layout = serve_layout
 
 @callback(
-    Output(component_id='state-polls-table', component_property='data'),
+    Output(component_id='state-polls-table', component_property='children'),
     Input(component_id='state-filter', component_property='value')
 )
 def filter_state_polls_table(val):
     if val == 'All':
-        return de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')].sort_values(by=['Date'], ascending=False).to_dict('records')
+        data = de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')].sort_values(by=['Date'], ascending=False)# .to_dict('records')
     else:
-        return de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == val].sort_values(by=['Date'], ascending=False).to_dict('records')
+        data = de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == val].sort_values(by=['Date'], ascending=False)# .to_dict('records')
+    return dbc.Table.from_dataframe(
+                df=data, striped=True, bordered=True, hover=True, responsive=True, style={'font-family':'monospace'}
+            )
 
 # Live updates
 

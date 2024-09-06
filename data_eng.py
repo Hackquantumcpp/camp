@@ -40,6 +40,9 @@ polls_np['state'] = polls_np['state'].fillna('National')
 polls_np['end_date_TS'] = pd.to_datetime(polls_np['end_date'])
 polls_for_state_avgs['end_date_TS'] = pd.to_datetime(polls_for_state_avgs['end_date'])
 
+# Also, highly important SurveyMonkey correction
+polls_np = polls_np[polls_np['pollster_rating_name'] != 'SurveyMonkey']
+
 polls_pivot = pd.pivot_table(data=polls_np, values='pct', index=['poll_id', 'state', 'population', 'sample_size', 'end_date_TS', 'pollster_rating_name'], 
                              columns=['candidate_name'], 
                              aggfunc='last', fill_value='NA').reset_index()
