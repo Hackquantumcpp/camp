@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import scipy
+import datetime
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -30,14 +31,19 @@ rel_polls = polls[(((polls['end_month'] >= 7) & (polls['end_day'] >= 1)) | (poll
 # Only high-quality, nonpartisan polls
 # Utilizing an arbitrary cutoff of 2.0
 polls_np = rel_polls[rel_polls['numeric_grade'] >= 2.0][rel_polls['partisan'].isna()] # [rel_polls['population'] == 'lv']
+polls_for_state_avgs = rel_polls[rel_polls['numeric_grade'] >= 1.9][rel_polls['partisan'].isna()]
 
 # Fill 'NA' values in 'state' with 'National'
 polls_np['state'] = polls_np['state'].fillna('National')
 
 # Prepare the dataframe as a time series
 polls_np['end_date_TS'] = pd.to_datetime(polls_np['end_date'])
+polls_for_state_avgs['end_date_TS'] = pd.to_datetime(polls_for_state_avgs['end_date'])
 
 polls_pivot = pd.pivot_table(data=polls_np, values='pct', index=['poll_id', 'state', 'population', 'sample_size', 'end_date_TS', 'pollster_rating_name'], 
+                             columns=['candidate_name'], 
+                             aggfunc='last', fill_value='NA').reset_index()
+polls_pivot_for_states = pd.pivot_table(data=polls_for_state_avgs, values='pct', index=['poll_id', 'state', 'population', 'sample_size', 'end_date_TS', 'pollster_rating_name'], 
                              columns=['candidate_name'], 
                              aggfunc='last', fill_value='NA').reset_index()
 
@@ -55,7 +61,10 @@ def pipeline(data: pd.DataFrame) -> pd.DataFrame:
     ids = df['poll_id']
     duplicate_polls = df[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
     unique_polls = df[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
-    dup_polls_3rd_party = duplicate_polls[duplicate_polls['Jill Stein'] != 'NA']
+    if 'Jill Stein' in duplicate_polls.columns.values:
+        dup_polls_3rd_party = duplicate_polls[duplicate_polls['Jill Stein'] != 'NA']
+    else:
+        dup_polls_3rd_party = duplicate_polls
     df_new = pd.concat([unique_polls, dup_polls_3rd_party], axis=0)
     
     ids = df_new['poll_id']
@@ -86,7 +95,14 @@ nat_readable = polls_with_pollster_readable[polls_with_pollster_readable['state'
                                                                                                  'Kamala Harris', 'Donald Trump',
                                                                                                  'Robert F. Kennedy', 'Jill Stein',
                                                                                                  'Cornel West', 'Chase Oliver']]
-state_readable = polls_with_pollster_readable[polls_with_pollster_readable['state'] != 'National'][['Date', 'Pollster', 'state', 'Sample',
+
+
+state_polls_table = pipeline(polls_pivot_for_states)
+state_polls_table = state_polls_table.rename({'end_date_TS':'Date', 'pollster_rating_name':'Pollster'}, axis=1)
+state_polls_table['population'] = state_polls_table['population'].str.upper()
+state_polls_table['Sample'] = state_polls_table['sample_size'].astype(int).astype(str) + ' ' + state_polls_table['population']
+state_polls_table = state_polls_table.drop(['sample_size', 'population'], axis=1)
+state_readable = state_polls_table[state_polls_table['state'] != 'National'][['poll_id', 'Date', 'Pollster', 'state', 'Sample',
                                                                                                  'Kamala Harris', 'Donald Trump',
                                                                                                  'Robert F. Kennedy', 'Jill Stein',
                                                                                                  'Cornel West', 'Chase Oliver']].rename({'state':'State'}, axis=1)
@@ -150,6 +166,74 @@ states['Rating'] = states['Margin'].map(margin_rating)
 states['Label'] = states['Margin'].map(margin_with_party)
 states_preproc = states.copy()
 
+# NEW State Polling Averages!
+
+def state_avgs_pipeline(state: str):
+    state_race = polls_for_state_avgs[polls_for_state_avgs['state'] == state]# [senate['party'].isin(['DEM', 'REP'])]
+    state_pivot = pd.pivot_table(data=state_race, values='pct', index=['poll_id', 'display_name', 'state', 'end_date', 'sample_size',
+                                                               'population', 'numeric_grade'], columns=['candidate_name'],
+                                                              aggfunc='last', fill_value='NA').reset_index()
+    state_pivot['end_date'] = pd.to_datetime(state_pivot['end_date'])
+    state_pivot = state_pivot[state_pivot['end_date'] >= pd.to_datetime('2024-07-24')]
+    state_pivot = pipeline(state_pivot)
+    
+    # Sample size weights
+    total_sample_size = np.sum(state_pivot['sample_size'])
+    state_pivot['sample_size_weights'] = state_pivot['sample_size'] / total_sample_size
+    
+    # Time weights
+    # Variation of the equation used here: https://polls.votehub.us/
+    today = datetime.datetime.today()
+    delta = (today - state_pivot['end_date']).apply(lambda x: x.days)
+    linear_weights = (1 - delta/((today - state_pivot['end_date'].min()).days + 1))
+    exp_weights = 0.5**(delta/((today - state_pivot['end_date'].min()).days + 1))
+    state_pivot['time_weights'] =  0.4 * linear_weights + 0.6 * exp_weights
+    state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
+    
+    # Quality weights
+    min_quality = 1.5
+    rel_quality = state_pivot['numeric_grade'] - min_quality
+    def quality_weight(rel_qual):
+        if rel_qual < -0.2:
+            return 0.01
+        elif rel_qual < 0:
+            return 0.02
+        return (0.05 + (0.95/min_quality) * rel_qual)
+    state_pivot['quality_weights'] = rel_quality.map(quality_weight)
+    state_pivot['quality_weights'] /= np.sum(state_pivot['quality_weights'])
+    
+    # Gather the weights together
+    state_pivot['total_weights'] = state_pivot['sample_size_weights'] * state_pivot['time_weights'] * state_pivot['quality_weights']
+    state_pivot['total_weights'] /= np.sum(state_pivot['total_weights']) # Normalization step
+    
+    return state_pivot
+def all_state_polls_with_weights(state_list):
+    df = state_avgs_pipeline(state_list[0]).replace({'NA':0})
+    for state in state_list[1:]:
+        pipelined_df = state_avgs_pipeline(state).replace({'NA':0})
+        df = pd.concat([df, pipelined_df], axis=0)
+    return df
+
+def get_state_averages(state_list):
+    dem_avgs = []
+    rep_avgs = []
+    for state in state_list:
+        pipelined_df = state_avgs_pipeline(state).replace({'NA':0})
+        dem_avg = np.sum(pipelined_df['Kamala Harris'] * pipelined_df['total_weights'])
+        rep_avg = np.sum(pipelined_df['Donald Trump'] * pipelined_df['total_weights'])
+        dem_avgs.append(dem_avg)
+        rep_avgs.append(rep_avg)
+    
+    return pd.DataFrame({'state':state_list.tolist(), 'Kamala Harris':dem_avgs, 'Donald Trump':rep_avgs})
+states_preproc_reset = states_preproc.reset_index()
+state_avgs_experimental = get_state_averages(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
+# By convention, positive margins indicate Harris advantage, while negative margins indicate Trump advantage.
+state_avgs_experimental['Margin'] = state_avgs_experimental['Kamala Harris'] - state_avgs_experimental['Donald Trump']
+state_avgs_experimental['Rating'] = state_avgs_experimental['Margin'].map(margin_rating)
+state_avgs_experimental['Label'] = state_avgs_experimental['Margin'].map(margin_with_party)
+states_preproc = state_avgs_experimental.copy()
+states = state_avgs_experimental.copy()
+
 states_ec = pd.read_csv('data/other/electoral-votes-by-state-2024.csv')
 states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_College_Votes'], axis=1)
 
@@ -157,11 +241,16 @@ states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_Co
 states = states.reset_index().merge(states_ec, on='state').merge(states_abb, left_on='state', right_on='Full_State')
 states['margin_for_choropleth'] = states['Margin'].map(lambda x: min(x, 20))
 
-states_preproc = states_preproc.reset_index()
+weights = all_state_polls_with_weights(states_preproc[states_preproc['state'] != 'National']['state'].values)[['poll_id', 'total_weights']]
+state_readable = state_readable.merge(weights, on='poll_id').rename({'total_weights':'Weight in State Polling Average'}, axis=1)
+state_readable['Weight in State Polling Average'] = state_readable['Weight in State Polling Average'].apply(lambda x: float(f'{x:.5f}'))
+state_readable = state_readable.drop(['poll_id'], axis=1)
+
+# states_preproc = states_preproc.reset_index()
 competitive = states_preproc[states_preproc['state'].isin(['Arizona', 'Georgia', 'Pennsylvania', 
                                                            'Michigan', 'Wisconsin', 'North Carolina', 'Minnesota',
                                           'Nevada', 'Texas', 'Florida', 'New Hampshire', 'Maine', 'Maine CD-2',
-                                                          'Nebraska CD-2', 'Virginia', 'New Mexico'])]
+                                                          'Nebraska CD-2', 'Virginia', 'New Mexico', 'Virginia'])]
 competitive = competitive.sort_values(by=['Margin'], ascending=False).merge(states_ec, on='state')
 leader = lambda x: 'Republicans' if x < 0 else 'Democrats'
 competitive['Leader'] = competitive['Margin'].map(leader)
@@ -178,16 +267,12 @@ def find_tipping_point():
     else:
         return 'Tie'
     df['Margin'] = df['Margin'].map(abs)
-    df = df.sort_values(by=['Margin'])
-    new_df = df.copy().reset_index()
-    # print(new_df)
-    while curr - new_df.iloc[0, 5] > 269:
-        # print(new_df.iloc[0, 5])
-        # print(new_df.iloc[0, 1])
-        curr -= new_df.iloc[0, 5]
-        # print(curr)
+    df = df.sort_values(by=['Margin'], ignore_index=True)
+    new_df = df.copy()
+    while curr - new_df.iloc[0, 6] > 269:
+        curr -= new_df.iloc[0, 6]
         new_df = new_df[1:]
-    return new_df.iloc[0, 1]
+    return new_df.iloc[0, 0]
 
 tp_state = find_tipping_point()
 tp_margin = states[states['state'] == tp_state]['Margin'].values[0]
@@ -261,7 +346,7 @@ trump_curves['polling_avg'] = trump_ts
 # harris_ts, trump_ts
 
 # Interpolation
-import datetime
+
 dates_range = pd.date_range(start=harris_curves.index.min(), end=harris_curves.index.max(),freq='d',
                            inclusive='both')
 dates_range_num = pd.to_numeric(dates_range)
