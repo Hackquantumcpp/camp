@@ -253,13 +253,13 @@ state_readable = state_readable.drop(['poll_id'], axis=1)
 competitive = states_preproc[states_preproc['state'].isin(['Arizona', 'Georgia', 'Pennsylvania', 
                                                            'Michigan', 'Wisconsin', 'North Carolina', 'Minnesota',
                                           'Nevada', 'Texas', 'Florida', 'New Hampshire', 'Maine', 'Maine CD-2',
-                                                          'Nebraska CD-2', 'Virginia', 'New Mexico', 'Virginia'])]
+                                                          'Nebraska CD-2', 'Virginia', 'New Mexico', 'Virginia', 'Ohio'])]
 competitive = competitive.sort_values(by=['Margin'], ascending=False).merge(states_ec, on='state')
 leader = lambda x: 'Republicans' if x < 0 else 'Democrats'
 competitive['Leader'] = competitive['Margin'].map(leader)
 
 harris_polled_ev = 191 + competitive[competitive['Leader'] == 'Democrats']['ElectoralVotes'].sum()
-trump_polled_ev = 148 + competitive[competitive['Leader'] == 'Republicans']['ElectoralVotes'].sum()
+trump_polled_ev = 131 + competitive[competitive['Leader'] == 'Republicans']['ElectoralVotes'].sum()
 def find_tipping_point():
     if harris_polled_ev > trump_polled_ev:
         df = competitive[competitive['Leader'] == 'Democrats'].copy()
