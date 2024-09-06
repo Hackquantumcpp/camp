@@ -55,14 +55,14 @@ def pipeline(data: pd.DataFrame) -> pd.DataFrame:
     ids = df['poll_id']
     duplicate_polls = df[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
     unique_polls = df[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
-    dup_polls_rv = duplicate_polls[duplicate_polls['population'] == 'rv']
-    df_new = pd.concat([unique_polls, dup_polls_rv], axis=0)
+    dup_polls_3rd_party = duplicate_polls[duplicate_polls['Jill Stein'] != 'NA']
+    df_new = pd.concat([unique_polls, dup_polls_3rd_party], axis=0)
     
     ids = df_new['poll_id']
     duplicate_polls = df_new[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
     unique_polls = df_new[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
-    dup_polls_3rd_party = duplicate_polls[duplicate_polls['Jill Stein'] != 'NA']
-    df_final = pd.concat([unique_polls, dup_polls_3rd_party], axis=0)
+    dup_polls_rv = duplicate_polls[duplicate_polls['population'] == 'rv']
+    df_final = pd.concat([unique_polls, dup_polls_rv], axis=0)
     
     if ((df_final['Kamala Harris'] == 'NA') | (df_final['Donald Trump'] == 'NA')).any():
         df_final = df_final[~((df_final['Kamala Harris'] == 'NA') | (df_final['Donald Trump'] == 'NA'))]
