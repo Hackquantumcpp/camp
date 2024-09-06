@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 # Import our data engineering and plot structuring file data_eng.py
 import data_eng as de
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.SIMPLEX])
+app = Dash(__name__, external_stylesheets=[dbc.themes.COSMO])
 
 server = app.server
 

@@ -253,7 +253,7 @@ state_readable = state_readable.drop(['poll_id'], axis=1)
 competitive = states_preproc[states_preproc['state'].isin(['Arizona', 'Georgia', 'Pennsylvania', 
                                                            'Michigan', 'Wisconsin', 'North Carolina', 'Minnesota',
                                           'Nevada', 'Texas', 'Florida', 'New Hampshire', 'Maine', 'Maine CD-2',
-                                                          'Nebraska CD-2', 'Virginia', 'New Mexico', 'Virginia', 'Ohio'])]
+                                                          'Nebraska CD-2', 'Virginia', 'New Mexico', 'Ohio'])]
 competitive = competitive.sort_values(by=['Margin'], ascending=False).merge(states_ec, on='state')
 leader = lambda x: 'Republicans' if x < 0 else 'Democrats'
 competitive['Leader'] = competitive['Margin'].map(leader)
