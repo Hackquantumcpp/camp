@@ -6,7 +6,8 @@ import dash_bootstrap_components as dbc
 # import datetime
 
 # Import our data engineering and plot structuring file data_eng.py
-import data_eng as de
+import data_eng_pres as de
+import data_eng_senate as sen
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.COSMO])
 
@@ -57,6 +58,39 @@ ec_bias_card = dbc.Card(
     ), color=('primary' if de.ec_bias > 0 else 'danger'), outline=True
 )
 
+generic_ballot_card = dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children=f'Generic Congressional Popular Polling Average', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.P(children=sen.generic_margin_label, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#100d94' if sen.generic_margin > 0 else '#940d0d')},
+                                                                                                                id='generic-margin')
+        ], style={'width':'18rem'}
+    ), color=('primary' if sen.generic_margin > 0 else 'danger'), outline=True
+)
+
+polled_senate_card = dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children=f'Polled Senate Seats', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.Div(children=f'Democrats - {sen.dem_polled_sen_seats}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#100d94'},
+                   id='dem-senate-seats'),
+            html.Div(children=f'Republicans - {sen.rep_polled_sen_seats}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#940d0d'},
+                     id='rep-senate-seats')
+        ], style={'width':'18rem'}
+    ), color=('primary' if sen.dem_polled_sen_seats > sen.rep_polled_sen_seats else 'danger'), outline=True
+)
+
+senate_bias_card = dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children=f'Senate Bias', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.P(children=('D' if sen.senate_bias > 0 else 'R') + f'+{abs(sen.senate_bias):.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console',
+                                                                                                            'color':('#100d94' if sen.senate_bias > 0 else '#940d0d')},
+                   id='senate-bias')
+        ], style={'width':'18rem'}
+    ), color=('primary' if sen.senate_bias > 0 else 'danger'), outline=True
+)
+
 ##############################
 
 
@@ -86,6 +120,14 @@ def serve_layout():
                             dbc.Col(nat_avg_card, width='auto'),
                             dbc.Col(tp_avg_card, width='auto'),
                             dbc.Col(ec_bias_card, width='auto')
+                        ], style={'justify-content':'center'}
+                    ),
+                    html.Br(),
+                    dbc.Row(
+                        [
+                            dbc.Col(generic_ballot_card, width='auto'),
+                            dbc.Col(polled_senate_card, width='auto'),
+                            dbc.Col(senate_bias_card, width='auto')
                         ], style={'justify-content':'center'}
                     )
                 ]
@@ -132,6 +174,40 @@ def serve_layout():
             ),
             # html.Br(),
             html.Div(id='state-polls-table', style={'maxHeight':'400px', 'overflow':'scroll'}),
+            html.Hr(),
+            html.H2(
+                children='National Polling, US Congressional 2024 - Generic',
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            dcc.Graph(
+                id='generic-ballot-polling',
+                figure=sen.fig
+            ),
+            html.H4(
+                children='Polls Utilized',
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            html.Div(dbc.Table.from_dataframe(
+                sen.generic_readable.sort_values(by=['Date'], ascending=False), striped=True, bordered=True, hover=True, 
+                responsive=True,
+                style={'font-family':'monospace'}, 
+            ), style={'maxHeight':'400px', 'overflow':'scroll'}),
+            html.Hr(),
+            html.H2(
+                children='State Polling, US Senate 2024',
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            dbc.Alert(
+                [
+                    html.P("Note: The prominent independent candidates in Maine, Vermont and Nebraska are counted as Democratic due to them either being incumbent senators caucusing with the Democratic Party (Maine, Vermont), or having liberal positions that generally align with the Democratic Party (Nebraska). The Nebraska special election is not shown in the map below. If you're really anxious or curious about that, it's a Solid R.")
+                ],
+                color='info',
+                style={'font-family':'Lucida Console', 'justify-content':'center'}
+            ),
+            dcc.Graph(
+                id='senate-polling',
+                figure=sen.fig_senate
+            ),
             html.Hr(),
             html.Div(
                 children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/'), ' | See the code on ', dcc.Link(children=['Github'], href='https://github.com/Hackquantumcpp/camp')],
