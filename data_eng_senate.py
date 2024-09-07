@@ -43,7 +43,7 @@ generic_used = generic_used[~generic_used['sample_size'].isna()]
 generic_readable = generic_used.rename({'display_name':'Pollster', 'end_date':'Date', 'dem':'Democrats', 'rep':'Republican'},
                                       axis=1)
 generic_readable['Sample'] = generic_readable['sample_size'].astype(int).astype(str) + ' ' + generic_readable['population'].map(lambda x: x.upper())
-generic_readable = generic_readable.drop(['poll_id', 'population', 'sample_size', 'ind'], axis=1)
+generic_readable = generic_readable.drop(['poll_id', 'population', 'sample_size', 'ind'], axis=1).set_index('Date').reset_index()
 
 
 # LOWESS Curves - Generic
