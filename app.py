@@ -199,7 +199,7 @@ def serve_layout():
             ),
             dbc.Alert(
                 [
-                    html.P("Note: The prominent independent candidates in Maine, Vermont and Nebraska are counted as Democratic due to them either being incumbent senators caucusing with the Democratic Party (Maine, Vermont), or having liberal positions that generally align with the Democratic Party (Nebraska). The Nebraska special election is not shown in the map below. If you're really anxious or curious about that, it's a Solid R.")
+                    html.P("Note: The prominent independent candidates in Maine, Vermont and Nebraska are counted as Democratic due to them either being incumbent senators caucusing with the Democratic Party (Maine, Vermont), or having the support of state Democrats (Nebraska). The Nebraska special election is not shown in the map below. If you're really anxious or curious about that, it's a Solid R.")
                 ],
                 color='info',
                 style={'font-family':'Lucida Console', 'justify-content':'center'}
