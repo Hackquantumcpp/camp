@@ -180,9 +180,12 @@ def state_avgs_pipeline(state: str):
     state_pivot = state_pivot[state_pivot['end_date'] >= pd.to_datetime('2024-07-24')]
     state_pivot = pipeline(state_pivot)
     
+    total_num_polls = state_pivot.shape[0]
+
     # Sample size weights
     total_sample_size = np.sum(state_pivot['sample_size'])
-    state_pivot['sample_size_weights'] = state_pivot['sample_size'] / total_sample_size
+    state_pivot['sample_size_weights'] = (state_pivot['sample_size'].map(np.sqrt) / np.sqrt(np.median(state_pivot['sample_size'])))
+    state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
     
     # Time weights
     # Variation of the equation used here: https://polls.votehub.us/

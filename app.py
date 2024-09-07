@@ -77,7 +77,8 @@ polled_senate_card = dbc.Card(
             html.Div(children=f'Republicans - {sen.rep_polled_sen_seats}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#940d0d'},
                      id='rep-senate-seats')
         ], style={'width':'18rem'}
-    ), color=('primary' if sen.dem_polled_sen_seats > sen.rep_polled_sen_seats else 'danger'), outline=True
+    ), color=('primary' if ((sen.dem_polled_sen_seats > sen.rep_polled_sen_seats) or (sen.dem_polled_sen_seats == sen.rep_polled_sen_seats
+                                                                                     and de.harris_polled_ev > de.trump_polled_ev)) else 'danger'), outline=True
 )
 
 senate_bias_card = dbc.Card(
