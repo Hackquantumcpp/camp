@@ -108,7 +108,7 @@ def serve_layout():
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: September 7, 2024 11:54 PM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: September 8, 2024 8:38 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
@@ -166,7 +166,8 @@ def serve_layout():
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
             ),
             dcc.Dropdown(
-                options=['All', 'Pennsylvania', 'Georgia', 'Arizona', 'North Carolina', 'Michigan', 'Wisconsin', 'Nevada', 'Maine CD-2'],
+                options=['All', 'Pennsylvania', 'Georgia', 'Arizona', 'North Carolina', 'Michigan', 'Wisconsin', 'Nevada', 'Maine CD-2', 'Texas',
+                         'Florida', 'Ohio', 'Minnesota', 'New Hampshire', 'Nebraska CD-2'],
                 value='All',
                 id='state-filter',
                 # inline=True,
