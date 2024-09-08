@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 # import datetime
 
-# Import our data engineering and plot structuring file data_eng.py
+# Import our data engineering and plot structuring files
 import data_eng_pres as de
 import data_eng_senate as sen
 
@@ -210,6 +210,15 @@ def serve_layout():
                 id='senate-polling',
                 figure=sen.fig_senate
             ),
+            html.H4(
+                children='State Polls Utilized',
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            html.Div(dbc.Table.from_dataframe(
+                sen.senate_state_polls.sort_values(by=['Date'], ascending=False), striped=True, bordered=True, hover=True, 
+                responsive=True,
+                style={'font-family':'monospace'}, 
+            ), style={'maxHeight':'400px', 'overflow':'scroll'}),
             html.Hr(),
             html.Div(
                 children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/'), ' | See the code on ', dcc.Link(children=['Github'], href='https://github.com/Hackquantumcpp/camp')],
