@@ -134,7 +134,7 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
     today = datetime.datetime.today()
     delta = (today - state_pivot['end_date']).apply(lambda x: x.days)
     state_pivot['time_weights'] = (0.4 * (1 - delta/((today - state_pivot['end_date'].min()).days + 1)) + 
-                                  0.6 *(0.5**(delta/((today - state_pivot['end_date'].min()).days + 1))))
+                                  0.6 *(0.3**(delta/((today - state_pivot['end_date'].min()).days + 1))))
     state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
     
     # Quality weights
@@ -148,9 +148,17 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
         return (0.05 + (0.95/(3-min_quality)) * rel_qual)
     state_pivot['quality_weights'] = rel_quality.map(quality_weight)
     state_pivot['quality_weights'] /= np.sum(state_pivot['quality_weights'])
+
+    # Population weights
+    def population_weight(population):
+        if population == 'a':
+            return 0.6
+        return 1
+    state_pivot['population_weights'] = state_pivot['population'].map(population_weight)
+    state_pivot['population_weights'] /= np.sum(state_pivot['population_weights'])
     
     # Gather the weights together
-    state_pivot['total_weights'] = state_pivot['sample_size_weights'] * state_pivot['time_weights'] * state_pivot['quality_weights']
+    state_pivot['total_weights'] = state_pivot['sample_size_weights'] * state_pivot['time_weights'] * state_pivot['quality_weights'] * state_pivot['population_weights']
     state_pivot['total_weights'] /= np.sum(state_pivot['total_weights']) # Normalization step
     
     return state_pivot
