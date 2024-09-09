@@ -145,7 +145,7 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
             return 0.01
         elif rel_qual < 0:
             return 0.02
-        return (0.05 + (0.95/min_quality) * rel_qual)
+        return (0.05 + (0.95/(3-min_quality)) * rel_qual)
     state_pivot['quality_weights'] = rel_quality.map(quality_weight)
     state_pivot['quality_weights'] /= np.sum(state_pivot['quality_weights'])
     
