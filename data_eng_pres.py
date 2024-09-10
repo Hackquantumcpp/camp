@@ -192,8 +192,8 @@ def state_avgs_pipeline(state: str):
     today = datetime.datetime.today()
     delta = (today - state_pivot['end_date']).apply(lambda x: x.days)
     linear_weights = (1 - delta/((today - state_pivot['end_date'].min()).days + 1))
-    exp_weights = 0.3**(delta/((today - state_pivot['end_date'].min()).days + 1))
-    state_pivot['time_weights'] =  0.4 * linear_weights + 0.6 * exp_weights
+    exp_weights = 0.4**(delta/((today - state_pivot['end_date'].min()).days + 1))
+    state_pivot['time_weights'] =  0.3 * linear_weights + 0.7 * exp_weights
     state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
     
     # Quality weights
