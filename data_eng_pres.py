@@ -189,7 +189,7 @@ def state_avgs_pipeline(state: str):
     
     # Time weights
     # Variation of the equation used here: https://polls.votehub.us/
-    latest_date = state_pivot['end_date'].max()
+    latest_date = datetime.datetime.today()
     delta = (latest_date - state_pivot['end_date']).apply(lambda x: x.days)
     linear_weights = (1 - delta/((latest_date - state_pivot['end_date'].min()).days + 1))
     exp_weights = 0.4**(delta/((latest_date - state_pivot['end_date'].min()).days + 1))
