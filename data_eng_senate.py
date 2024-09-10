@@ -127,7 +127,7 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
     # Sample size weights
     total_sample_size = np.sum(state_pivot['sample_size'])
     state_pivot['sample_size_weights'] = state_pivot['sample_size'].map(np.sqrt) / np.sqrt(np.median(state_pivot['sample_size']))
-    state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
+    # state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
     
     # Time weights
     # Variation of the equation used here: https://polls.votehub.us/
@@ -135,7 +135,7 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
     delta = (today - state_pivot['end_date']).apply(lambda x: x.days)
     state_pivot['time_weights'] = (0.4 * (1 - delta/((today - state_pivot['end_date'].min()).days + 1)) + 
                                   0.6 *(0.3**(delta/((today - state_pivot['end_date'].min()).days + 1))))
-    state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
+    # state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
     
     # Quality weights
     min_quality = 1.9
@@ -147,7 +147,7 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
             return 0.02
         return (0.05 + (0.95/(3-min_quality)) * rel_qual)
     state_pivot['quality_weights'] = rel_quality.map(quality_weight)
-    state_pivot['quality_weights'] /= np.sum(state_pivot['quality_weights'])
+    # state_pivot['quality_weights'] /= np.sum(state_pivot['quality_weights'])
 
     # Population weights
     def population_weight(population):
@@ -155,7 +155,7 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
             return 0.6
         return 1
     state_pivot['population_weights'] = state_pivot['population'].map(population_weight)
-    state_pivot['population_weights'] /= np.sum(state_pivot['population_weights'])
+    # state_pivot['population_weights'] /= np.sum(state_pivot['population_weights'])
     
     # Gather the weights together
     state_pivot['total_weights'] = state_pivot['sample_size_weights'] * state_pivot['time_weights'] * state_pivot['quality_weights'] * state_pivot['population_weights']
@@ -302,13 +302,38 @@ generic_margin = dem_lowess[:, 1][-1] - rep_lowess[:, 1][-1]
 generic_margin_label = ('D' if generic_margin > 0 else 'R') + f'+{generic_margin:.2f}%'
 
 winner = state_averages_df_all['Margin'].map(lambda x: 'DEM' if x > 0 else 'REP')
+state_averages_df_all['Winner'] = winner
 dem_polled_sen_seats = 33 + np.count_nonzero(winner == 'DEM')
 rep_polled_sen_seats = 41 + np.count_nonzero(winner == 'REP')
+# By convention, positive = DEM win and negative = REP win
 sen_margin = dem_polled_sen_seats - rep_polled_sen_seats
 total = 100
 sen_margin /= (total / 100)
 
-senate_bias = sen_margin - generic_margin
+from data_eng_pres import harris_polled_ev, trump_polled_ev
+
+pres_winner = 'DEM' if harris_polled_ev > trump_polled_ev else 'REP'
+
+def senate_tipping_point():
+    if sen_margin > 0:
+        sen_winner = 'DEM'
+        curr = dem_polled_sen_seats
+    elif sen_margin < 0:
+        sen_winner = 'REP'
+        curr = rep_polled_sen_seats
+    else: # sen_margin = 0
+        sen_winner = pres_winner
+        curr = dem_polled_sen_seats if pres_winner == 'DEM' else rep_polled_sen_seats
+    winners_states = state_averages_df_all[state_averages_df_all['Winner'] == sen_winner].sort_values(['Margin'], ignore_index=True, ascending=True)
+    threshold = 50 if sen_winner == pres_winner else 51
+    while curr - 1 > threshold:
+        winners_states = winners_states[1:]
+        curr -= 1
+    return winners_states.loc[0, 'state']
+
+sen_tp_state = senate_tipping_point()
+sen_tp_margin = state_averages_df_all[state_averages_df_all['state'] == sen_tp_state]['Margin'].values[0]
+senate_bias = sen_tp_margin - generic_margin
 
 # Plots/charts
 

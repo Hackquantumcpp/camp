@@ -81,6 +81,18 @@ polled_senate_card = dbc.Card(
                                                                                      and de.harris_polled_ev > de.trump_polled_ev)) else 'danger'), outline=True
 )
 
+senate_tp_avg_card = dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children=f'Senate Tipping Point Polling Average ({sen.sen_tp_state})', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.P(children=(sen.state_averages_df_all[sen.state_averages_df_all['state'] == sen.sen_tp_state][('DEM_cand' if sen.sen_tp_margin >= 0 else 'REP_cand')].values[0].strip()) + f'+{abs(sen.sen_tp_margin):.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console',
+                                                                                                                'color':('#100d94' if sen.sen_tp_margin > 0 else '#940d0d')},
+                                                                                                                id='senate_tp_avg'
+                   )
+        ], style={'width':'18rem'}
+    ), color=('primary' if sen.sen_tp_margin >= 0 else 'danger'), outline=True
+)
+
 senate_bias_card = dbc.Card(
     dbc.CardBody(
         [
@@ -128,6 +140,7 @@ def serve_layout():
                         [
                             dbc.Col(generic_ballot_card, width='auto'),
                             dbc.Col(polled_senate_card, width='auto'),
+                            dbc.Col(senate_tp_avg_card, width='auto'),
                             dbc.Col(senate_bias_card, width='auto')
                         ], style={'justify-content':'center'}
                     )
@@ -155,7 +168,8 @@ def serve_layout():
             ),
             dcc.Graph(
                 id='state-polling',
-                figure=de.fig_states
+                figure=de.fig_states,
+                style={'justify':'center'}
             ),
             dcc.Graph(
                 id='competitive-state-polling',
@@ -208,7 +222,8 @@ def serve_layout():
             ),
             dcc.Graph(
                 id='senate-polling',
-                figure=sen.fig_senate
+                figure=sen.fig_senate,
+                style={'justify':'center'}
             ),
             html.H4(
                 children='State Polls Utilized',

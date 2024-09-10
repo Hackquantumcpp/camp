@@ -185,7 +185,7 @@ def state_avgs_pipeline(state: str):
     # Sample size weights
     total_sample_size = np.sum(state_pivot['sample_size'])
     state_pivot['sample_size_weights'] = (state_pivot['sample_size'].map(np.sqrt) / np.sqrt(np.median(state_pivot['sample_size'])))
-    state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
+    # state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
     
     # Time weights
     # Variation of the equation used here: https://polls.votehub.us/
@@ -194,7 +194,7 @@ def state_avgs_pipeline(state: str):
     linear_weights = (1 - delta/((today - state_pivot['end_date'].min()).days + 1))
     exp_weights = 0.4**(delta/((today - state_pivot['end_date'].min()).days + 1))
     state_pivot['time_weights'] =  0.3 * linear_weights + 0.7 * exp_weights
-    state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
+    # state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
     
     # Quality weights
     min_quality = 1.5
@@ -206,7 +206,7 @@ def state_avgs_pipeline(state: str):
             return 0.02
         return (0.05 + (0.95/(3-min_quality)) * rel_qual)
     state_pivot['quality_weights'] = rel_quality.map(quality_weight)
-    state_pivot['quality_weights'] /= np.sum(state_pivot['quality_weights'])
+    # state_pivot['quality_weights'] /= np.sum(state_pivot['quality_weights'])
     
     # Population weights
     def population_weight(population):
@@ -214,7 +214,7 @@ def state_avgs_pipeline(state: str):
             return 0.6
         return 1
     state_pivot['population_weights'] = state_pivot['population'].map(population_weight)
-    state_pivot['population_weights'] /= np.sum(state_pivot['population_weights'])
+    # state_pivot['population_weights'] /= np.sum(state_pivot['population_weights'])
 
     # Gather the weights together
     state_pivot['total_weights'] = state_pivot['sample_size_weights'] * state_pivot['time_weights'] * state_pivot['quality_weights'] * state_pivot['population_weights']
