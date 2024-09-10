@@ -131,10 +131,10 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
     
     # Time weights
     # Variation of the equation used here: https://polls.votehub.us/
-    today = datetime.datetime.today()
-    delta = (today - state_pivot['end_date']).apply(lambda x: x.days)
-    state_pivot['time_weights'] = (0.4 * (1 - delta/((today - state_pivot['end_date'].min()).days + 1)) + 
-                                  0.6 *(0.3**(delta/((today - state_pivot['end_date'].min()).days + 1))))
+    latest_date = state_pivot['end_date'].max()
+    delta = (latest_date - state_pivot['end_date']).apply(lambda x: x.days)
+    state_pivot['time_weights'] = (0.4 * (1 - delta/((latest_date - state_pivot['end_date'].min()).days + 1)) + 
+                                  0.6 *(0.3**(delta/((latest_date - state_pivot['end_date'].min()).days + 1))))
     # state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
     
     # Quality weights

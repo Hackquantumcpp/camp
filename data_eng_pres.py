@@ -189,10 +189,10 @@ def state_avgs_pipeline(state: str):
     
     # Time weights
     # Variation of the equation used here: https://polls.votehub.us/
-    today = datetime.datetime.today()
-    delta = (today - state_pivot['end_date']).apply(lambda x: x.days)
-    linear_weights = (1 - delta/((today - state_pivot['end_date'].min()).days + 1))
-    exp_weights = 0.4**(delta/((today - state_pivot['end_date'].min()).days + 1))
+    latest_date = state_pivot['end_date'].max()
+    delta = (latest_date - state_pivot['end_date']).apply(lambda x: x.days)
+    linear_weights = (1 - delta/((latest_date - state_pivot['end_date'].min()).days + 1))
+    exp_weights = 0.4**(delta/((latest_date - state_pivot['end_date'].min()).days + 1))
     state_pivot['time_weights'] =  0.3 * linear_weights + 0.7 * exp_weights
     # state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
     
