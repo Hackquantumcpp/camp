@@ -185,7 +185,7 @@ def state_avgs_pipeline(state: str):
     # Sample size weights
     total_sample_size = np.sum(state_pivot['sample_size'])
     state_pivot['sample_size_weights'] = (state_pivot['sample_size'].map(np.sqrt) / np.sqrt(np.median(state_pivot['sample_size'])))
-    # state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
+    state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
     
     # Time weights
     # Variation of the equation used here: https://polls.votehub.us/
