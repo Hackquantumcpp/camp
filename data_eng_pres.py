@@ -5,8 +5,11 @@ import plotly.graph_objects as go
 import scipy
 import datetime
 import warnings
+# from dash_bootstrap_templates import load_figure_template
 
 warnings.filterwarnings('ignore')
+
+# load_figure_template('cyborg')
 
 polls = pd.read_csv('https://projects.fivethirtyeight.com/polls-page/data/president_polls.csv')
 
@@ -441,7 +444,7 @@ fig_harris_CI = go.Figure([
         marker=dict(color='#8972fc'),
         line=dict(width=0),
         showlegend=False,
-        hoverinfo='skip'
+        hoverinfo='skip',
     ),
     go.Scatter(
         name='Harris CI Lower Bound',
@@ -453,7 +456,7 @@ fig_harris_CI = go.Figure([
         fill='tonexty',
         fillcolor='rgba(137, 114, 252, 0.15)',
         showlegend=False,
-        hoverinfo='skip'
+        hoverinfo='skip',
     )
     
 ])
@@ -479,7 +482,7 @@ fig_trump_CI = go.Figure([
         fill='tonexty',
         fillcolor='rgba(252, 116, 114, 0.15)',
         showlegend=False,
-        hoverinfo='skip'
+        hoverinfo='skip',
     )
     
 ])
@@ -491,6 +494,7 @@ fig.update_layout(
     xaxis_title = 'Date',
     yaxis_title = 'Polled Vote %',
     legend_title = 'Legend',
+    template='plotly_dark'
 )
 
 fig.add_vline(x=datetime.datetime.strptime("2024-07-21", "%Y-%m-%d").timestamp() * 1000, line_dash='dot', 
@@ -502,10 +506,10 @@ fig_states = px.choropleth(data_frame=states.reset_index(), locations='Abb_State
                           color_continuous_scale='RdBu', range_color=[-20, 20], hover_name='state', 
                           hover_data={'Abb_State':False, 'Rating':True, 'Margin':False, 'Label':True, 
                                       'margin_for_choropleth':False, 'border_color':False},
-                          labels={'Label':'Average Margin'}, width=1400, height=1000)
+                          labels={'Label':'Average Margin'}, height=1000)
 
 fig_states.update_geos(
-    showland=True, landcolor="#c4c2c2",
+    showland=True, landcolor="#777778",
 )
 
 fig_states.update_traces(
@@ -515,6 +519,7 @@ fig_states.update_traces(
 fig_states.update_layout(
     title_text = '2024 US Presidential Election State Polling Averages',
     geo_scope='usa', # limit map scope to USA
+    template='plotly_dark'
 )
 
 fig_states.update_layout(coloraxis_colorbar=dict(
@@ -528,7 +533,8 @@ fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='Leader')
 
 fig_comp.update_layout(
     title='Margins in Competitive States',
-    yaxis_title='State'
+    yaxis_title='State',
+    template='plotly_dark'
 )
 
 # EC Bias

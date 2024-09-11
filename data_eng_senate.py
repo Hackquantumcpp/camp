@@ -7,6 +7,9 @@ import datetime
 import warnings
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import json
+# from dash_bootstrap_templates import load_figure_template
+
+# load_figure_template('cyborg')
 
 warnings.filterwarnings('ignore')
 
@@ -404,6 +407,7 @@ fig.update_layout(
     xaxis_title = 'Date',
     yaxis_title = 'Polled Vote %',
     legend_title = 'Legend',
+    template='plotly_dark'
 )
 
 fig_senate = px.choropleth(
@@ -417,12 +421,11 @@ fig_senate = px.choropleth(
     hover_data={'Abb_State':False, 'Rating':True, 'Margin':False, 'Label':True, 
                 'margin_for_choropleth':False},
     labels={'Label':'Average Margin'},
-    width=1400,
     height=1000
 )
 
 fig_senate.update_geos(
-    showland=True, landcolor="#c4c2c2",
+    showland=True, landcolor="#777778",
 )
 
 fig_senate.update_traces(
@@ -432,6 +435,7 @@ fig_senate.update_traces(
 fig_senate.update_layout(
     title_text = '2024 US Senate Election State Polling Averages',
     geo_scope='usa', # limit map scope to USA
+    template='plotly_dark'
 )
 
 fig_senate.update_layout(coloraxis_colorbar=dict(
