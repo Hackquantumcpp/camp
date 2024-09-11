@@ -222,7 +222,7 @@ def serve_layout():
                 [
                     html.P("Note: The prominent independent candidates in Maine, Vermont and Nebraska are counted as Democratic due to them either being incumbent senators caucusing with the Democratic Party (Maine, Vermont), or having the support of state Democrats (Nebraska). The Nebraska special election is not shown in the map below. If you're really anxious or curious about that, it's a Solid R.")
                 ],
-                color='info',
+                color='secondary',
                 style={'font-family':'Lucida Console', 'justify-content':'center'}
             ),
             dcc.Graph(
