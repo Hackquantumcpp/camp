@@ -255,6 +255,19 @@ states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_Co
 states = states.reset_index().merge(states_ec, on='state').merge(states_abb, left_on='state', right_on='Full_State')
 states['margin_for_choropleth'] = states['Margin'].map(lambda x: min(x, 20))
 
+def choose_border_color(state):
+    if state in ['Wisconsin', 'Pennsylvania', 'Nevada', 'Arizona', 'Michigan', 'North Carolina', 'Georgia']:
+        return 'white'
+    return 'white'
+
+def choose_border_width(state):
+    if state in ['Wisconsin', 'Pennsylvania', 'Nevada', 'Arizona', 'Michigan', 'North Carolina', 'Georgia']:
+        return 1.0
+    return 1.0
+
+states['border_color'] = states['state'].map(choose_border_color)
+states['border_width'] = states['state'].map(choose_border_width)
+
 weights = all_state_polls_with_weights(states_preproc[states_preproc['state'] != 'National']['state'].values)[['poll_id', 'total_weights']]
 state_readable = state_readable.merge(weights, on='poll_id').rename({'total_weights':'Weight in State Polling Average'}, axis=1)
 state_readable['Weight in State Polling Average'] = state_readable['Weight in State Polling Average'].apply(lambda x: float(f'{x:.5f}'))
@@ -488,8 +501,17 @@ fig_states = px.choropleth(data_frame=states.reset_index(), locations='Abb_State
                            color='margin_for_choropleth',
                           color_continuous_scale='RdBu', range_color=[-20, 20], hover_name='state', 
                           hover_data={'Abb_State':False, 'Rating':True, 'Margin':False, 'Label':True, 
-                                      'margin_for_choropleth':False},
+                                      'margin_for_choropleth':False, 'border_color':False},
                           labels={'Label':'Average Margin'}, width=1400, height=1000)
+
+fig_states.update_geos(
+    showland=True, landcolor="#c4c2c2",
+)
+
+fig_states.update_traces(
+    marker_line_color='black'
+)
+
 fig_states.update_layout(
     title_text = '2024 US Presidential Election State Polling Averages',
     geo_scope='usa', # limit map scope to USA

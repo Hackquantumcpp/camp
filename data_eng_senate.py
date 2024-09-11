@@ -421,6 +421,14 @@ fig_senate = px.choropleth(
     height=1000
 )
 
+fig_senate.update_geos(
+    showland=True, landcolor="#c4c2c2",
+)
+
+fig_senate.update_traces(
+    marker_line_color='black'
+)
+
 fig_senate.update_layout(
     title_text = '2024 US Senate Election State Polling Averages',
     geo_scope='usa', # limit map scope to USA
