@@ -156,6 +156,8 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
     def population_weight(population):
         if population == 'a':
             return 0.6
+        elif population == 'rv':
+            return 0.9
         return 1
     state_pivot['population_weights'] = state_pivot['population'].map(population_weight)
     # state_pivot['population_weights'] /= np.sum(state_pivot['population_weights'])
