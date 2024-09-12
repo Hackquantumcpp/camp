@@ -422,8 +422,8 @@ harris_trump_data = harris_trump_data[['polling_avg_harris', 'polling_avg_trump'
      'polling_avg_trump':'Donald Trump',
     'index':'Date'}, axis=1)
 
-nat_polls_ts_readable = nat_polls_ts.rename({'end_date_TS':'Date'}, axis=1)
-
+nat_polls_ts_readable = nat_polls_ts.rename({'end_date_TS':'Date', 'sample_size':'Sample Size'}, axis=1)
+# nat_polls_ts_readable = nat_polls_ts_readable.merge(polls[['poll_id', 'display_name']], on='poll_id').rename({'display_name':'Pollster'}, axis=1)
 
 
 # Plots
@@ -436,6 +436,7 @@ fig_line = px.line(data_frame=harris_trump_data_interp, x='Date', y=['Kamala Har
 
 fig_scatter = px.scatter(data_frame=nat_polls_ts_readable, x='Date', y=['Kamala Harris', 'Donald Trump'], opacity=0.5)
 # fig_scatter.show()
+
 
 fig_harris_CI = go.Figure([
     go.Scatter(
