@@ -61,23 +61,23 @@ def pipeline(data: pd.DataFrame) -> pd.DataFrame:
     ids = data['poll_id']
     duplicate_polls = data[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
     unique_polls = data[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
-    dup_polls_lv = duplicate_polls[duplicate_polls['population'] == 'lv']
+    dup_polls_lv = duplicate_polls[duplicate_polls['population'].isin(['lv', 'rv'])]
     df = pd.concat([unique_polls, dup_polls_lv], axis=0)
-
+    
     ids = df['poll_id']
     duplicate_polls = df[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
     unique_polls = df[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
+    dup_polls_rv = duplicate_polls[duplicate_polls['population'] == 'lv']
+    df_new = pd.concat([unique_polls, dup_polls_rv], axis=0)
+
+    ids = df_new['poll_id']
+    duplicate_polls = df_new[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
+    unique_polls = df_new[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
     if 'Jill Stein' in duplicate_polls.columns.values:
         dup_polls_3rd_party = duplicate_polls[duplicate_polls['Jill Stein'] != 'NA']
     else:
         dup_polls_3rd_party = duplicate_polls
-    df_new = pd.concat([unique_polls, dup_polls_3rd_party], axis=0)
-    
-    ids = df_new['poll_id']
-    duplicate_polls = df_new[ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
-    unique_polls = df_new[~ids.isin(ids[ids.duplicated()])].sort_values("poll_id")
-    dup_polls_rv = duplicate_polls[duplicate_polls['population'] == 'rv']
-    df_final = pd.concat([unique_polls, dup_polls_rv], axis=0)
+    df_final = pd.concat([unique_polls, dup_polls_3rd_party], axis=0)
     
     if ((df_final['Kamala Harris'] == 'NA') | (df_final['Donald Trump'] == 'NA')).any():
         df_final = df_final[~((df_final['Kamala Harris'] == 'NA') | (df_final['Donald Trump'] == 'NA'))]
@@ -289,7 +289,8 @@ def choose_border_width(state):
 states['border_color'] = states['state'].map(choose_border_color)
 states['border_width'] = states['state'].map(choose_border_width)
 
-weights = all_state_polls_with_weights(states_preproc[states_preproc['state'] != 'National']['state'].values)[['poll_id', 'total_weights']]
+polls_with_weights = all_state_polls_with_weights(states_preproc[states_preproc['state'] != 'National']['state'].values)
+weights = polls_with_weights[['poll_id', 'total_weights']]
 state_readable = state_readable.merge(weights, on='poll_id').rename({'total_weights':'Weight in State Polling Average'}, axis=1)
 state_readable['Weight in State Polling Average'] = state_readable['Weight in State Polling Average'].apply(lambda x: float(f'{x:.5f}'))
 state_readable = state_readable.drop(['poll_id'], axis=1)
