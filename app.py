@@ -8,9 +8,7 @@ import dash_bootstrap_components as dbc
 # Import our data engineering and plot structuring files
 import data_eng_pres as de
 import data_eng_senate as sen
-import model as mod
-
-print(mod.summary_harris_pa)
+# import model as mod
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(__name__, external_stylesheets=[dbc.themes.CYBORG, dbc_css])
