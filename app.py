@@ -8,6 +8,9 @@ import dash_bootstrap_components as dbc
 # Import our data engineering and plot structuring files
 import data_eng_pres as de
 import data_eng_senate as sen
+import model as mod
+
+print(mod.summary_harris_pa)
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(__name__, external_stylesheets=[dbc.themes.CYBORG, dbc_css])
@@ -108,8 +111,7 @@ senate_bias_card = dbc.Card(
 ##############################
 
 
-def serve_layout():
-    return html.Div(
+app.layout = html.Div(
         children=[
             html.Br(),
             html.H2(
@@ -121,7 +123,7 @@ def serve_layout():
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: September 12, 2024 1:10 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: September 13, 2024 4:33 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
@@ -249,7 +251,6 @@ def serve_layout():
         ], className='dbc'
     )
 
-app.layout = serve_layout
 
 @callback(
     Output(component_id='state-polls-table', component_property='children'),
