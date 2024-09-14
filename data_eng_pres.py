@@ -293,6 +293,7 @@ polls_with_weights = all_state_polls_with_weights(states_preproc[states_preproc[
 weights = polls_with_weights[['poll_id', 'total_weights']]
 state_readable = state_readable.merge(weights, on='poll_id').rename({'total_weights':'Weight in State Polling Average'}, axis=1)
 state_readable['Weight in State Polling Average'] = state_readable['Weight in State Polling Average'].apply(lambda x: float(f'{x:.5f}'))
+state_readable_with_id = state_readable.copy()
 state_readable = state_readable.drop(['poll_id'], axis=1)
 
 # states_preproc = states_preproc.reset_index()
