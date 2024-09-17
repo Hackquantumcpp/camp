@@ -248,16 +248,20 @@ def get_state_averages(state_list):
 def get_state_averages_with_stdev(state_list):
     dem_avgs = []
     rep_avgs = []
+    dem_stdevs = []
+    rep_stdevs = []
     for state in state_list:
         pipelined_df = state_avgs_pipeline(state).replace({'NA':0})
         dem_avg = np.sum(pipelined_df['Kamala Harris'] * pipelined_df['total_weights'])
         rep_avg = np.sum(pipelined_df['Donald Trump'] * pipelined_df['total_weights'])
         dem_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Kamala Harris'] - dem_avg)**2)
-        rep_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Donald Trump'] - dem_avg)**2)
+        rep_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Donald Trump'] - rep_avg)**2)
         dem_avgs.append(dem_avg)
         rep_avgs.append(rep_avg)
+        dem_stdevs.append(dem_std)
+        rep_stdevs.append(rep_std)
     
-    return pd.DataFrame({'state':state_list.tolist(), 'Kamala Harris':dem_avgs, 'Donald Trump':rep_avgs, 'harris_std':dem_std, 'trump_std':rep_std})
+    return pd.DataFrame({'state':state_list.tolist(), 'Kamala Harris':dem_avgs, 'Donald Trump':rep_avgs, 'harris_std':dem_stdevs, 'trump_std':rep_stdevs})
 
 states_preproc_reset = states_preproc.reset_index()
 state_avgs_experimental = get_state_averages(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
@@ -268,6 +272,7 @@ state_avgs_experimental['Label'] = state_avgs_experimental['Margin'].map(margin_
 states_preproc = state_avgs_experimental.copy()
 states = state_avgs_experimental.copy()
 states_with_std = get_state_averages_with_stdev(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
+print(states_with_std)
 
 states_ec = pd.read_csv('data/other/electoral-votes-by-state-2024.csv')
 states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_College_Votes'], axis=1)
