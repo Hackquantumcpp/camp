@@ -309,7 +309,7 @@ generic_margin_label = ('D' if generic_margin > 0 else 'R') + f'+{generic_margin
 winner = state_averages_df_all['Margin'].map(lambda x: 'DEM' if x > 0 else 'REP')
 state_averages_df_all['Winner'] = winner
 dem_polled_sen_seats = 33 + np.count_nonzero(winner == 'DEM')
-rep_polled_sen_seats = 41 + np.count_nonzero(winner == 'REP')
+rep_polled_sen_seats = 40 + np.count_nonzero(winner == 'REP')
 # By convention, positive = DEM win and negative = REP win
 sen_margin = dem_polled_sen_seats - rep_polled_sen_seats
 total = 100

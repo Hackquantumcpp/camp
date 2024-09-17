@@ -272,7 +272,7 @@ state_avgs_experimental['Label'] = state_avgs_experimental['Margin'].map(margin_
 states_preproc = state_avgs_experimental.copy()
 states = state_avgs_experimental.copy()
 states_with_std = get_state_averages_with_stdev(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
-print(states_with_std)
+# print(states_with_std)
 
 states_ec = pd.read_csv('data/other/electoral-votes-by-state-2024.csv')
 states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_College_Votes'], axis=1)
