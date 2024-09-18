@@ -205,11 +205,12 @@ def all_polls_with_weights(senate_data):
 
 def all_polls_with_weights_ind(senate_data):
     state_list = senate_data['state'].value_counts().index.to_numpy()
-    polls_df = state_avgs_pipeline(senate_data, state_list[0])
-    cols = contains_substr_in_list(polls_df.columns.values, ['IND', 'DEM', 'REP'])
-    cols = cols[1:]
-    polls_df = polls_df.rename({cols[0]:'DEM', cols[1]:'REP'}, axis=1)
-    for state in state_list[1:]:
+    # polls_df = state_avgs_pipeline(senate_data, state_list[0])
+    # cols = contains_substr_in_list(polls_df.columns.values, ['IND', 'DEM', 'REP'])
+    # cols = cols[1:]
+    # polls_df = polls_df.rename({cols[0]:'DEM', cols[1]:'REP'}, axis=1)
+    polls_df = pd.DataFrame()
+    for state in state_list:
         pipelined_df = state_avgs_pipeline(senate_data, state)
         cols = contains_substr_in_list(pipelined_df.columns.values, ['IND', 'DEM', 'REP'])
         if state == 'Nebraska':
@@ -227,7 +228,9 @@ def all_polls_with_weights_ind(senate_data):
             pipelined_df = pipelined_df.drop(['Berry (IND)'], axis=1)
         pipelined_df = pipelined_df.rename({cols[0]:'DEM', cols[1]:'REP'}, axis=1)
         polls_df = pd.concat([polls_df, pipelined_df], axis=0)
-    polls_df = polls_df.drop(['Hill (LIB)', 'Schoville (OTH)', 'Berry (IND)'], axis=1)
+    # print(polls_df[['display_name', 'state', 'end_date', 'DEM', 'REP', 'total_weights']])
+    # print(polls_df.columns.values)
+    polls_df = polls_df.drop(['Hill (LIB)', 'Schoville (OTH)'], axis=1)
     return polls_df
 
 senate_ind = senate_np[senate_np['state'].isin(['Nebraska', 'Maine', 'Vermont'])]
