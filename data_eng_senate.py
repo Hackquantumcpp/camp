@@ -332,7 +332,9 @@ def senate_tipping_point():
     else: # sen_margin = 0
         sen_winner = pres_winner
         curr = dem_polled_sen_seats if pres_winner == 'DEM' else rep_polled_sen_seats
-    winners_states = state_averages_df_all[state_averages_df_all['Winner'] == sen_winner].sort_values(['Margin'], ignore_index=True, ascending=True)
+    winners_states = state_averages_df_all[state_averages_df_all['Winner'] == sen_winner]
+    winners_states['Margin'] = winners_states['Margin'].map(abs)
+    winners_states = winners_states.sort_values(['Margin'], ignore_index=True, ascending=True)
     threshold = 50 if sen_winner == pres_winner else 51
     while curr - 1 > threshold:
         winners_states = winners_states[1:]
