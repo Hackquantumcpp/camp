@@ -1,0 +1,1 @@
+Images are modified versions of source images found at [GIS Geography](https://gisgeography.com/state-outlines-blank-maps-united-states/)
