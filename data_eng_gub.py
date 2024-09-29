@@ -106,7 +106,7 @@ fig_governor = px.choropleth(
 )
 
 fig_governor.update_layout(
-    title_text = '2024 US Senate Election State Polling Averages',
+    title_text = '2024 US Gubernatorial Election State Polling Averages',
     geo_scope='usa', # limit map scope to USA
     template='plotly_dark'
 )
