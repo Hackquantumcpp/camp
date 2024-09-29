@@ -8,6 +8,7 @@ import dash_bootstrap_components as dbc
 # Import our data engineering and plot structuring files
 import data_eng_pres as de
 import data_eng_senate as sen
+import data_eng_gub as gub
 # import model as mod
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
@@ -282,6 +283,25 @@ app.layout = html.Div(
             ),
             html.Div(dbc.Table.from_dataframe(
                 sen.senate_state_polls.sort_values(by=['Date'], ascending=False), striped=True, bordered=True, hover=True, 
+                responsive=True,
+                style={'font-family':'monospace'}, 
+            ), style={'maxHeight':'400px', 'overflow':'scroll'}),
+            html.Hr(),
+            html.H3(
+                children='State Polling, US Gubernatorial 2024',
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            dcc.Graph(
+                id='gubernatorial-polling',
+                figure = gub.fig_governor,
+                style={'justify':'center', 'width':'auto'}
+            ),
+            html.H4(
+                children='State Polls Utilized',
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            html.Div(dbc.Table.from_dataframe(
+                gub.state_polls, striped=True, bordered=True, hover=True, 
                 responsive=True,
                 style={'font-family':'monospace'}, 
             ), style={'maxHeight':'400px', 'overflow':'scroll'}),
