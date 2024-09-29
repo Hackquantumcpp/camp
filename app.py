@@ -296,6 +296,7 @@ app.layout = html.Div(
                 figure = gub.fig_governor,
                 style={'justify':'center', 'width':'auto'}
             ),
+            html.Br(),
             html.H4(
                 children='State Polls Utilized',
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
