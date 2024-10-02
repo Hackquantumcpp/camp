@@ -158,7 +158,7 @@ app.layout = html.Div(
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: October 2, 2024 6:20 PM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: October 2, 2024 7:20 PM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
@@ -290,11 +290,15 @@ app.layout = html.Div(
                 children='State Polls Utilized',
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
             ),
-            html.Div(dbc.Table.from_dataframe(
-                sen.senate_state_polls.sort_values(by=['Date'], ascending=False), striped=True, bordered=True, hover=True, 
-                responsive=True,
-                style={'font-family':'monospace'}, 
-            ), style={'maxHeight':'400px', 'overflow':'scroll'}),
+            dcc.Dropdown(
+                options=['All', 'Montana', 'Ohio', 'Nebraska', 'Florida', 'Texas', 'Michigan', 'Pennsylvania', 'Wisconsin', 'Arizona', 'Nevada', 'Maryland'],
+                value='All',
+                id='senate-state-filter',
+                # inline=True,
+                searchable=True,
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            html.Div(id='senate-state-polls-table', style={'maxHeight':'400px', 'overflow':'scroll'}),
             html.Hr(),
             html.H3(
                 children='State Polling, US Gubernatorial 2024',
@@ -336,6 +340,21 @@ def filter_state_polls_table(val):
         data = de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == val].sort_values(by=['Date'], ascending=False)# .to_dict('records')
     return dbc.Table.from_dataframe(
                 df=data, striped=True, bordered=True, hover=True, responsive=True, style={'font-family':'monospace'}
+            )
+
+@callback(
+    Output(component_id='senate-state-polls-table', component_property='children'),
+    Input(component_id='senate-state-filter', component_property='value')
+)
+def filter_senate_polls_table(val):
+    if val == 'All':
+        data = sen.senate_state_polls.sort_values(by=['Date'], ascending=False)
+    else:
+        data = sen.senate_state_polls[sen.senate_state_polls['State'] == val].sort_values(by=['Date'], ascending=False)
+    return dbc.Table.from_dataframe(
+                df=data, striped=True, bordered=True, hover=True, 
+                responsive=True,
+                style={'font-family':'monospace'}, 
             )
 
 @callback(
