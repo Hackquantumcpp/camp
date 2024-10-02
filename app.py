@@ -9,6 +9,7 @@ import dash_bootstrap_components as dbc
 import data_eng_pres as de
 import data_eng_senate as sen
 import data_eng_gub as gub
+from data_eng_state_pres_over_time import state_timeseries
 # import model as mod
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
@@ -220,10 +221,18 @@ app.layout = html.Div(
                 figure=de.fig_states,
                 style={'justify':'center', 'width':'auto'},
             ),
-            dcc.Graph(
-                id='competitive-state-polling',
-                figure=de.fig_comp,
-            ),
+            html.Div([
+                dcc.Graph(
+                    id='competitive-state-polling',
+                    figure=de.fig_comp,
+                    hoverData={'points': [{'y': 'Pennsylvania'}]},
+                    style={'width':'50%', 'display':'inline-block'}
+                ),
+                dcc.Graph(
+                    id='state-timeseries',
+                    style={'width':'50%', 'display':'inline-block'}
+                )
+            ]),
             html.Br(),
             html.H4(
                 children='State Polls Utilized',
@@ -328,6 +337,25 @@ def filter_state_polls_table(val):
     return dbc.Table.from_dataframe(
                 df=data, striped=True, bordered=True, hover=True, responsive=True, style={'font-family':'monospace'}
             )
+
+@callback(
+    Output(component_id='state-timeseries', component_property='figure'),
+    Input(component_id='competitive-state-polling', component_property='hoverData')
+)
+def state_timeseries_fetch(hoverData):
+    state = hoverData['points'][0]['y'] # ['y']# [0]['customdata']
+    # print(state)
+    timeseries_df = state_timeseries[state]
+    fig_line = px.line(data_frame=timeseries_df, x='Date', y=['Kamala Harris', 'Donald Trump'], title=state)
+    # fig_scatter = px.scatter(data_frame=de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == state].set_index('Date'), y=['Kamala Harris', 'Donald Trump'], opacity=0.5)
+    fig = go.Figure(data=fig_line.data)# + fig_scatter.data)
+    fig.update_layout(
+        title=f'{state} Polling Average',
+        xaxis_title='Date',
+        yaxis_title='Polled Vote %',
+        template='plotly_dark'
+    )
+    return fig
 
 # Live updates
 

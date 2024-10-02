@@ -263,8 +263,11 @@ def get_state_averages_with_stdev(state_list):
     
     return pd.DataFrame({'state':state_list.tolist(), 'Kamala Harris':dem_avgs, 'Donald Trump':rep_avgs, 'harris_std':dem_stdevs, 'trump_std':rep_stdevs})
 
+state_list = polls_for_state_avgs['state'].value_counts().index.values
+state_list = np.delete(state_list, np.where(state_list == 'Tennessee')) # Tennessee causes errors
 states_preproc_reset = states_preproc.reset_index()
 state_avgs_experimental = get_state_averages(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
+# state_avgs_experimental = get_state_averages(state_list)
 # By convention, positive margins indicate Harris advantage, while negative margins indicate Trump advantage.
 state_avgs_experimental['Margin'] = state_avgs_experimental['Kamala Harris'] - state_avgs_experimental['Donald Trump']
 state_avgs_experimental['Rating'] = state_avgs_experimental['Margin'].map(margin_rating)
@@ -555,7 +558,7 @@ fig_states.update_layout(coloraxis_colorbar=dict(
 ))
 states = states.rename({'Margin':'Average Polling Margin'}, axis=1)
 
-fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='Leader')
+fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='Leader', custom_data=['state'])
 
 fig_comp.update_layout(
     title='Margins in Competitive States',
