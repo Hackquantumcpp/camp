@@ -263,11 +263,11 @@ def get_state_averages_with_stdev(state_list):
     
     return pd.DataFrame({'state':state_list.tolist(), 'Kamala Harris':dem_avgs, 'Donald Trump':rep_avgs, 'harris_std':dem_stdevs, 'trump_std':rep_stdevs})
 
-state_list = polls_for_state_avgs['state'].value_counts().index.values
+state_list = polls_for_state_avgs[polls_for_state_avgs['numeric_grade'] >= 1.9]['state'].value_counts().index.values
 state_list = np.delete(state_list, np.where(state_list == 'Tennessee')) # Tennessee causes errors
 states_preproc_reset = states_preproc.reset_index()
-state_avgs_experimental = get_state_averages(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
-# state_avgs_experimental = get_state_averages(state_list)
+# state_avgs_experimental = get_state_averages(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
+state_avgs_experimental = get_state_averages(state_list)
 # By convention, positive margins indicate Harris advantage, while negative margins indicate Trump advantage.
 state_avgs_experimental['Margin'] = state_avgs_experimental['Kamala Harris'] - state_avgs_experimental['Donald Trump']
 state_avgs_experimental['Rating'] = state_avgs_experimental['Margin'].map(margin_rating)
@@ -308,7 +308,7 @@ state_readable = state_readable.drop(['poll_id'], axis=1)
 competitive = states_preproc[states_preproc['state'].isin(['Arizona', 'Georgia', 'Pennsylvania', 
                                                            'Michigan', 'Wisconsin', 'North Carolina', 'Minnesota',
                                           'Nevada', 'Texas', 'Florida', 'New Hampshire', 'Maine CD-2',
-                                                          'Nebraska CD-2', 'Virginia', 'New Mexico', 'Ohio', 'Iowa'])]
+                                                          'Nebraska CD-2', 'Virginia', 'New Mexico', 'Ohio', 'Iowa', 'Alaska'])]
 competitive = competitive.sort_values(by=['Margin'], ascending=False).merge(states_ec, on='state')
 leader = lambda x: 'Republicans' if x < 0 else 'Democrats'
 competitive['Leader'] = competitive['Margin'].map(leader)
