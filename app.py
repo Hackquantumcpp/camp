@@ -240,7 +240,7 @@ app.layout = html.Div(
             ),
             dcc.Dropdown(
                 options=['All', 'Pennsylvania', 'Georgia', 'Arizona', 'North Carolina', 'Michigan', 'Wisconsin', 'Nevada', 'Maine CD-2', 'Texas',
-                         'Florida', 'Ohio', 'Minnesota', 'New Hampshire', 'Nebraska CD-2'],
+                         'Florida', 'Ohio', 'Minnesota', 'New Hampshire', 'Nebraska CD-2', 'Alaska'],
                 value='All',
                 id='state-filter',
                 # inline=True,
