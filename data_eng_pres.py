@@ -459,8 +459,11 @@ nat_polls_ts_readable = nat_polls_ts.rename({'end_date_TS':'Date', 'sample_size'
 fig_line = px.line(data_frame=harris_trump_data_interp, x='Date', y=['Kamala Harris', 'Donald Trump'], 
                    title='Harris vs. Trump National Polling', markers=False)
 # fig_line.show()
+fig_line.update_traces(hovertemplate=None)
+fig_line.update_layout(hovermode='x unified')
 
-fig_scatter = px.scatter(data_frame=nat_polls_ts_readable, x='Date', y=['Kamala Harris', 'Donald Trump'], opacity=0.5)
+fig_scatter = px.scatter(data_frame=nat_polls_ts_readable, x='Date', y=['Kamala Harris', 'Donald Trump'], opacity=0.5)#, size='Sample Size', size_max=20)
+fig_scatter.update_traces(hovertemplate=None, hoverinfo='skip')
 # fig_scatter.show()
 
 
@@ -523,7 +526,8 @@ fig.update_layout(
     xaxis_title = 'Date',
     yaxis_title = 'Polled Vote %',
     legend_title = 'Legend',
-    template='plotly_dark'
+    template='plotly_dark',
+    hovermode='x unified'
 )
 
 fig.add_vline(x=datetime.datetime.strptime("2024-07-21", "%Y-%m-%d").timestamp() * 1000, line_dash='dot', 

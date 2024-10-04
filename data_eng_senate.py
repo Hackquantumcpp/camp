@@ -349,6 +349,8 @@ senate_bias = sen_tp_margin - generic_margin
 
 fig_line = px.line(data_frame=generic_curves, x=generic_curves.index, y=['Dem', 'Rep'], title='Generic Congressional Ballot Polling',
                   markers=False)
+fig_line.update_traces(hovertemplate=None)
+fig_line.update_layout(hovermode='x unified')
 
 fig_dem_CI = go.Figure([
     go.Scatter(
@@ -404,6 +406,7 @@ fig_rep_CI = go.Figure([
 
 fig_scatter = px.scatter(data_frame=generic_used, x='end_date', y=['dem', 'rep'], opacity=0.3)
                         # trendline='lowess', trendline_options=dict(frac=0.2))
+fig_scatter.update_traces(hovertemplate=None, hoverinfo='skip')
 
 fig = go.Figure(data=fig_line.data + fig_scatter.data + fig_dem_CI.data + fig_rep_CI.data)
 
@@ -414,7 +417,8 @@ fig.update_layout(
     xaxis_title = 'Date',
     yaxis_title = 'Polled Vote %',
     legend_title = 'Legend',
-    template='plotly_dark'
+    template='plotly_dark',
+    hovermode='x unified'
 )
 
 fig_senate = px.choropleth(
