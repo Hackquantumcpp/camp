@@ -368,11 +368,13 @@ def state_timeseries_fetch(hoverData):
     fig_line = px.line(data_frame=timeseries_df, x='Date', y=['Kamala Harris', 'Donald Trump'], title=state)
     # fig_scatter = px.scatter(data_frame=de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == state].set_index('Date'), y=['Kamala Harris', 'Donald Trump'], opacity=0.5)
     fig = go.Figure(data=fig_line.data)# + fig_scatter.data)
+    fig.update_traces(hovertemplate=None)
     fig.update_layout(
         title=f'{state} Polling Average',
         xaxis_title='Date',
         yaxis_title='Polled Vote %',
-        template='plotly_dark'
+        template='plotly_dark',
+        hovermode='x unified'
     )
     return fig
 

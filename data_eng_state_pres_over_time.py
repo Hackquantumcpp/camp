@@ -86,6 +86,7 @@ def get_state_timeseries(state_list):
     state_series = {}
     for state in state_list:
         state_ts = get_state_average_over_time(state)
+        # state_ts['Margin'] = state_ts['Kamala Harris'] - state_ts['Donald Trump']
         state_series.update({state: state_ts})
     return state_series
 
