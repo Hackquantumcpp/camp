@@ -264,7 +264,9 @@ def get_state_averages_with_stdev(state_list):
     return pd.DataFrame({'state':state_list.tolist(), 'Kamala Harris':dem_avgs, 'Donald Trump':rep_avgs, 'harris_std':dem_stdevs, 'trump_std':rep_stdevs})
 
 state_list = polls_for_state_avgs[polls_for_state_avgs['numeric_grade'] >= 1.9]['state'].value_counts().index.values
+full_state_list = polls_for_state_avgs['state'].value_counts().index.values
 state_list = np.delete(state_list, np.where(state_list == 'Tennessee')) # Tennessee causes errors
+full_state_list = np.delete(full_state_list, np.where(full_state_list == 'Tennessee')) # Tennessee causes errors
 states_preproc_reset = states_preproc.reset_index()
 # state_avgs_experimental = get_state_averages(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
 state_avgs_experimental = get_state_averages(state_list)
@@ -274,7 +276,9 @@ state_avgs_experimental['Rating'] = state_avgs_experimental['Margin'].map(margin
 state_avgs_experimental['Label'] = state_avgs_experimental['Margin'].map(margin_with_party)
 states_preproc = state_avgs_experimental.copy()
 states = state_avgs_experimental.copy()
-states_with_std = get_state_averages_with_stdev(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
+# states_with_std = get_state_averages_with_stdev(states_preproc_reset[states_preproc_reset['state'] != 'National']['state'].values)
+states_with_std = get_state_averages_with_stdev(state_list)
+states_with_std_all = get_state_averages_with_stdev(full_state_list)
 # print(states_with_std)
 
 states_ec = pd.read_csv('data/other/electoral-votes-by-state-2024.csv')
