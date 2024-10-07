@@ -10,6 +10,7 @@ import data_eng_pres as de
 import data_eng_senate as sen
 import data_eng_gub as gub
 from data_eng_state_pres_over_time import state_timeseries
+import snoutcount_model as scm
 # import model as mod
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
@@ -18,6 +19,20 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.CYBORG, dbc_css])
 server = app.server
 
 ##### OVERVIEW INFOCARDS #####
+election_chances_card =dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children='Election Chances', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.Div(children=f'Harris - {scm.harris_ev_win_chance * 100:.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'},
+                                id='harris-chance'),
+            html.Div(children=f'Trump - {scm.trump_ev_win_chance * 100:.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'},
+                                id='trump-chance'),
+            html.Div(children=f'Tie - {scm.tie_chance:.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'white'},
+                                id='tie-chance')
+        ]
+    ), style={'width':'18rem'}, color=('primary' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else 'danger'), outline=True
+)
+
 polled_ev_card =dbc.Card(
     dbc.CardBody(
         [
@@ -167,6 +182,12 @@ app.layout = html.Div(
                 children=[
                     dbc.Row(
                         [
+                            dbc.Col(election_chances_card, width='auto')
+                        ], style={'justify-content':'center'}
+                    ),
+                    html.Br(),
+                    dbc.Row(
+                        [
                             dbc.Col(polled_ev_card, width='auto'),
                             dbc.Col(nat_avg_card, width='auto'),
                             dbc.Col(tp_avg_card, width='auto'),
@@ -194,6 +215,43 @@ app.layout = html.Div(
             #         )
             #     ]
             # ),
+            html.Hr(),
+            html.H3(children='SnoutCount - Election Prediction Model', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.Br(),
+            dbc.Tabs(
+                [
+                    dbc.Tab([html.Br(), html.H4(children=f"{'Harris' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else 'Trump'} is leading with a {max(scm.harris_ev_win_chance, scm.trump_ev_win_chance) * 100:.1f}% chance of winning the election in the SnoutCount combined fundamentals+polls model.",
+                            style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else '#ff4a3d')}),
+                    html.Br(),
+                    dcc.Graph(
+                        id='projection',
+                        figure=scm.fig_projection,
+                        style={'justify':'center', 'width':'auto'}
+                    )], label='Combined'),
+                    dbc.Tab([
+                        html.Br(),
+                        html.H4(children=f"{'Harris' if scm.polls_ev_pred['harris'] > scm.polls_ev_pred['trump'] else 'Trump'} is leading with a {max(scm.polls_ev_pred['harris'], scm.polls_ev_pred['trump']) * 100:.1f}% chance of winning the election in the SnoutCount polls-only model.",
+                            style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if scm.polls_ev_pred['harris'] > scm.polls_ev_pred['trump'] else '#ff4a3d')}),
+                        html.Br(),
+                        dcc.Graph(
+                            id='polls-only',
+                            figure=scm.fig_states_polling,
+                            style={'justify':'center', 'width':'auto'}
+                        )
+                    ], label='Polls-Only'),
+                    dbc.Tab([html.Br(),
+                        html.H4(children=f"{'Harris' if scm.fund_ev_pred['harris'] > scm.fund_ev_pred['trump'] else 'Trump'} is leading with a {max(scm.fund_ev_pred['harris'], scm.fund_ev_pred['trump']) * 100:.1f}% chance of winning the election in the SnoutCount fundamentals-only model.",
+                            style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if scm.fund_ev_pred['harris'] > scm.fund_ev_pred['trump'] else '#ff4a3d')}),
+                        # html.H5(children='*Utilizing uncorrelated sampling, thus may not match map below.', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+                        html.Br(),
+                        dcc.Graph(
+                            id='fundamentals-only',
+                            figure=scm.fig_states_fund,
+                            style={'justify':'center', 'width':'auto'}
+                        )], label='Fundamentals-Only'
+                    ),
+                ]
+            ),
             html.Hr(),
             html.H3(
                 children='National Polling Averages and Trends, US Presidential 2024',

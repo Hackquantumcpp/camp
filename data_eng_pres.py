@@ -318,7 +318,7 @@ leader = lambda x: 'Republicans' if x < 0 else 'Democrats'
 competitive['Leader'] = competitive['Margin'].map(leader)
 
 harris_polled_ev = 193 + competitive[competitive['Leader'] == 'Democrats']['ElectoralVotes'].sum()
-trump_polled_ev = 125 + competitive[competitive['Leader'] == 'Republicans']['ElectoralVotes'].sum()
+trump_polled_ev = 122 + competitive[competitive['Leader'] == 'Republicans']['ElectoralVotes'].sum()
 def find_tipping_point():
     if harris_polled_ev > trump_polled_ev:
         df = competitive[competitive['Leader'] == 'Democrats'].copy()
