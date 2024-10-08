@@ -240,6 +240,11 @@ app.layout = html.Div(
                         id='projection',
                         figure=scm.fig_projection,
                         style={'justify':'center', 'width':'auto'}
+                    ),
+                    dcc.Graph(
+                        id='sims-histogram',
+                        figure=scm.fig_sims,
+                        style={'justify':'center', 'width':'auto'}
                     )], label='Combined'),
                     dbc.Tab([
                         html.Br(),
@@ -263,6 +268,23 @@ app.layout = html.Div(
                             style={'justify':'center', 'width':'auto'}
                         )], label='Fundamentals-Only'
                     ),
+                    dbc.Tab([html.Br(),
+                        html.H4(children=f"Press the button to simulate the election with the SnoutCount combined fundamentals+polls model.",
+                            style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'white'}),
+                        html.H5(children="Note that not every outcome will necessarily be likely! In fact, many of them won't be. Outliers are inevitable when running statistical simulations.",
+                                style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'white'}),
+                        html.Div(dbc.Button("Simulate!", id='simulate-button', n_clicks=0, outline=True, color='primary'), className='d-grid gap-2 col-6 mx-auto'), # style={'width':'18rem', 'height':'auto', 'textAlign':'center'}
+                        # html.H5(children='*Utilizing uncorrelated sampling, thus may not match map below.', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+                        html.Br(),
+                        html.Div(id='harris_sim_ev', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'}),
+                        html.Div(id='trump_sim_ev', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'}),
+                        html.Br(),
+                        dcc.Graph(
+                            id='simulation',
+                            style={'justify':'center', 'width':'auto'}
+                        )], label='Simulate The Election'
+                    ),
+                    
                 ]
             ),
             html.Hr(),
@@ -448,6 +470,44 @@ def state_timeseries_fetch(hoverData):
         hovermode='x unified'
     )
     return fig
+
+@callback(
+    Output(component_id='simulation', component_property='figure'),
+    Output(component_id='harris_sim_ev', component_property='children'),
+    Output(component_id='trump_sim_ev', component_property='children'),
+    Input(component_id='simulate-button', component_property='n_clicks')
+)
+def simulate_election(n_clicks):
+    scenario_df, harris_sim_ev = scm.simulate()
+    scenarios_df_choro = scenario_df.reset_index().merge(scm.states_abb, left_on='state', right_on='Full_State').drop(['Full_State'], axis=1)
+    scenarios_df_choro['margin_for_choropleth'] = scenarios_df_choro['margin'].map(lambda x: max(-15, min(x, 15)))
+    scenarios_df_choro['Rating'] = scenarios_df_choro['margin'].map(scm.margin_rating)
+    scenarios_df_choro['Label'] = scenarios_df_choro['margin'].map(scm.margin_with_party)
+    fig_scenario_margins = px.choropleth(data_frame=scenarios_df_choro, locations='Abb_State', locationmode='USA-states', 
+                            color='margin_for_choropleth',
+                            color_continuous_scale='RdBu', range_color=[-15, 15], hover_name='index', 
+                            hover_data={'Abb_State':False, 'margin_for_choropleth':False, 'margin':False, 'Label':True, 'Rating':True},
+                            labels={'Label':'Projected Margin'}, height=1000)
+    fig_scenario_margins.update_layout(
+        title_text = '2024 US Presidential Election SnoutCount Projected Margins - Fundamentals+Polls',
+        geo_scope='usa', # limit map scope to USA
+        template='plotly_dark'
+    )
+
+    fig_scenario_margins.update_layout(coloraxis_colorbar=dict(
+        title='Margin',
+        tickvals=[-15, -10, -5, 0, 5, 10, 15],
+        ticktext=['>R+15', 'R+10', 'R+5', 'EVEN', 'D+5', 'D+10', '>D+15']
+    ))
+
+    fig_scenario_margins.update_traces(
+        marker_line_color='black'
+    )
+
+    harris_ev_stat = html.H6(children=f'Harris - {harris_sim_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'})
+    trump_ev_stat = html.H6(children=f'Trump - {538 - harris_sim_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'})
+
+    return fig_scenario_margins, harris_ev_stat, trump_ev_stat
 
 # Live updates
 

@@ -420,7 +420,7 @@ def fundamentals_ev_pred():
     chance = np.count_nonzero(harris_ec > trump_ec) / harris_ec.shape[0]
     pred = np.median(harris_ec)
     # print(harris_ec, trump_ec)
-    return {'harris': np.mean(harris_ec > trump_ec), 'trump': np.mean(trump_ec > harris_ec), 'tie': np.mean(harris_ec == trump_ec)}, state_chances[1:]
+    return {'harris': np.mean(harris_ec > trump_ec), 'trump': np.mean(trump_ec > harris_ec), 'tie': np.mean(harris_ec == trump_ec)}, state_chances[1:], margin_dist
 
 #############################################
 
@@ -428,7 +428,8 @@ polls_weight = 0.9
 fund_weight = 0.1
 
 polls_ev_pred = ev_pred()
-fund_ev_pred, fund_preds = fundamentals_ev_pred()
+fund_ev_pred, fund_preds, fund_samples = fundamentals_ev_pred()
+polls_samples = np.array(list(samples.values()))
 fund_margins = cpvi.set_index(['State'])['projected_margin']
 fund_preds = pd.concat([fund_preds, fund_margins], axis=1).rename({'projected_margin':'margin'}, axis=1)
 
@@ -437,7 +438,6 @@ total_chance = polls_weight * chances_df['chance'] + fund_weight * fund_preds['c
 
 # polls_ev_pred = ev_pred()
 # fund_ev_pred, fund_preds = fundamentals_ev_pred()
-
 
 harris_ev_win_chance = polls_weight * polls_ev_pred['harris'] + fund_weight * fund_ev_pred['harris']
 trump_ev_win_chance = polls_weight * polls_ev_pred['trump'] + fund_weight * fund_ev_pred['trump']
@@ -455,6 +455,40 @@ proj_ev['winner'] = proj_ev['chance'].map(winner)
 proj_ev = proj_ev.merge(states_ec, left_on=proj_ev.index, right_on='state')
 harris_projected_evs = np.sum(proj_ev['winner'] * proj_ev['ElectoralVotes'])
 trump_projected_evs = 538 - harris_projected_evs
+
+####################
+
+def simulate():
+    def winner(margin):
+        # 1 = Harris, 0 = Trump
+        return 1 if margin > 0 else 0
+    index = np.random.choice(10000, 1)[0]
+    polls_scenario = polls_samples[:, index]
+    # fund_scenario = fund_samples[:, index]
+    fund_scenario = fund_preds['margin']
+    scenario = polls_weight * polls_scenario + fund_weight * fund_scenario
+    states_ec_dict_nonat = states_ec_dict.copy()
+    states_ec_dict_nonat.pop('United States')
+    harris_winning = np.sum(np.vectorize(winner)(scenario) * np.vectorize(lambda x: x['ElectoralVotes'])(np.array(list(states_ec_dict_nonat.values()))))
+    scenario_df = pd.DataFrame({'state':full_state_list, 'margin':scenario})
+    return scenario_df, harris_winning
+
+def all_sims_ev():
+    def winner(margin):
+        # 1 = Harris, 0 = Trump
+        return 1 if margin > 0 else 0
+    harris_ev_sims = []
+    states_ec_dict_nonat = states_ec_dict.copy()
+    states_ec_dict_nonat.pop('United States')
+    for index in range(polls_samples.shape[1]):
+        polls_scenario = polls_samples[:, index]
+        # fund_scenario = fund_samples[:, index]
+        fund_scenario = fund_preds['margin']
+        scenario = polls_weight * polls_scenario + fund_weight * fund_scenario
+        harris_winning = np.sum(np.vectorize(winner)(scenario) * np.vectorize(lambda x: x['ElectoralVotes'])(np.array(list(states_ec_dict_nonat.values()))))
+        harris_ev_sims.append(harris_winning)
+    return harris_ev_sims
+
 
 ####################
 
@@ -645,4 +679,19 @@ fig_projection_margins.update_layout(coloraxis_colorbar=dict(
 
 fig_projection_margins.update_traces(
     marker_line_color='black'
+)
+
+### PROJECTION HISTOGRAM ###
+
+harris_ev_sims = all_sims_ev()
+sims_df = pd.DataFrame(harris_ev_sims).rename({0:'ev'}, axis=1)
+sims_df['winner'] = sims_df['ev'].map(lambda x: 'Harris win' if x > 269 else 'Trump win')
+fig_sims = px.histogram(data_frame=sims_df, x='ev', color='winner', labels={'ev':'EV Bin', 'count':'Sim Count'})
+fig_sims.add_vline(x=270, line_dash='dot', annotation_text='Winning Threshold', annotation_position='top right')
+fig_sims.update_layout(
+    title_text='SnoutCount Combined Model Simulations (N=10,001)',
+    xaxis_title='Electoral Votes',
+    yaxis_title='Count',
+    legend_title='Winner',
+    template='plotly_dark'
 )
