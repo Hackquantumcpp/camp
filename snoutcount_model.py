@@ -446,6 +446,15 @@ tie_chance = polls_weight * polls_ev_pred['tie'] + fund_weight * fund_ev_pred['t
 projection = pd.concat([projected_margins, total_chance], axis=1)
 # projection
 
+def winner(chance):
+    # Dealing with Harris chances
+    return 1 if chance > 0.5 else 0
+
+proj_ev = projection.copy()
+proj_ev['winner'] = proj_ev['chance'].map(winner)
+proj_ev = proj_ev.merge(states_ec, left_on=proj_ev.index, right_on='state')
+harris_projected_evs = np.sum(proj_ev['winner'] * proj_ev['ElectoralVotes'])
+trump_projected_evs = 538 - harris_projected_evs
 
 ####################
 
@@ -487,7 +496,7 @@ fig_states_polling.update_layout(
 )
 
 fig_states_polling.update_layout(coloraxis_colorbar=dict(
-    title='Harris Win Chance',
+    title='Win Chance',
     tickvals=[0, 0.25, 0.5, 0.75, 1],
     ticktext=['Safe Trump', 'Likely Trump', 'Tossup', 'Likely Harris', 'Safe Harris']
 ))
@@ -545,7 +554,7 @@ fig_states_fund.update_layout(
 )
 
 fig_states_fund.update_layout(coloraxis_colorbar=dict(
-    title='Harris Win Chance',
+    title='Win Chance',
     tickvals=[0, 0.25, 0.5, 0.75, 1],
     ticktext=['Safe Trump', 'Likely Trump', 'Tossup', 'Likely Harris', 'Safe Harris']
 ))
@@ -587,7 +596,7 @@ fig_states_fund_margins.update_traces(
 projection_for_choropleth = projection.reset_index().merge(states_abb, left_on='index', right_on='Full_State').drop(['Full_State'], axis=1)
 projection_for_choropleth['rounded_chance'] = projection_for_choropleth['chance'].map(lambda x: np.round(x, decimals=2))
 projection_for_choropleth['trump_chance'] = 1 - projection_for_choropleth['rounded_chance']
-projection_for_choropleth['harris_chance_display'] = projection_for_choropleth['chance'].map(lambda x: f'{(x*100):.1f}%')
+projection_for_choropleth['harris_chance_display'] = projection_for_choropleth['rounded_chance'].map(lambda x: f'{(x*100):.1f}%')
 projection_for_choropleth['trump_chance_display'] = projection_for_choropleth['trump_chance'].map(lambda x: f'{(x*100):.1f}%')
 projection_for_choropleth['Rating'] = projection_for_choropleth['chance'].map(chance_rating)
 fig_projection = px.choropleth(data_frame=projection_for_choropleth, locations='Abb_State', locationmode='USA-states', 
@@ -602,7 +611,7 @@ fig_projection.update_layout(
 )
 
 fig_projection.update_layout(coloraxis_colorbar=dict(
-    title='Harris Win Chance',
+    title='Win Chance',
     tickvals=[0, 0.25, 0.5, 0.75, 1],
     ticktext=['Safe Trump', 'Likely Trump', 'Tossup', 'Likely Harris', 'Safe Harris']
 ))

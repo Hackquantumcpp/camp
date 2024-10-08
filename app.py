@@ -33,6 +33,18 @@ election_chances_card =dbc.Card(
     ), style={'width':'18rem'}, color=('primary' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else 'danger'), outline=True
 )
 
+projected_ev_card =dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children='Projected Electoral College', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.Div(children=f'Harris - {scm.harris_projected_evs}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'},
+                                id='harris-ev-projection'),
+            html.Div(children=f'Trump - {scm.trump_projected_evs}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'},
+                                id='trump-ev-projection')
+        ]
+    ), style={'width':'18rem'}, color=('primary' if scm.harris_projected_evs > scm.trump_projected_evs else 'danger'), outline=True
+)
+
 polled_ev_card =dbc.Card(
     dbc.CardBody(
         [
@@ -182,7 +194,8 @@ app.layout = html.Div(
                 children=[
                     dbc.Row(
                         [
-                            dbc.Col(election_chances_card, width='auto')
+                            dbc.Col(election_chances_card, width='auto'),
+                            dbc.Col(projected_ev_card, width='auto')
                         ], style={'justify-content':'center'}
                     ),
                     html.Br(),
@@ -216,7 +229,7 @@ app.layout = html.Div(
             #     ]
             # ),
             html.Hr(),
-            html.H3(children='SnoutCount - Election Prediction Model', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.H3(children='SnoutCount Election Prediction Model', style={'textAlign':'center', 'font-family':'Lucida Console'}),
             html.Br(),
             dbc.Tabs(
                 [
