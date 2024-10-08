@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from functools import reduce
 from data_eng_pres import states_with_std, state_readable_with_id, polls
+from pathlib import Path
 # import arviz as az
 
 ################# FUNDAMENTALS MODEL ###################
@@ -164,6 +165,20 @@ cpvi['test_margin'] = cpvi['projected_harris_pct'] - cpvi['projected_trump_pct']
 
 state_polling_data = state_readable_with_id.copy()
 state_polling_data = state_readable_with_id.merge(polls[['poll_id', 'numeric_grade']], on='poll_id', how='inner')
+
+# stdevs = {'pred_harris_stdev':pred_harris_stdev, 'pred_trump_stdev':pred_trump_stdev}
+
+f = open('fundamentals_model_output.py', 'w')
+f.write('pred_harris_stdev = ' + repr(pred_harris_stdev) + '\n')
+f.write('pred_trump_stdev = ' + repr(pred_trump_stdev) + '\n')
+f.write('pred_harris_val = ' + repr(pred_harris_val) + '\n')
+f.write('pred_trump_val = ' + repr(pred_trump_val) + '\n')
+f.write('pred_margin = ' + repr(pred_harris_val - pred_trump_val) + '\n')
+f.close()
+
+filepath_cpvi = Path('data/fundamentals/cpvi_modified.csv')
+filepath_cpvi.parent.mkdir(parents=True, exist_ok=True)
+cpvi.to_csv(filepath_cpvi)
 
 # def model_one_state(state: str):
 #     state_data = cpvi[cpvi['State'] == state]

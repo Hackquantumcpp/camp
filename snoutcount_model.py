@@ -11,9 +11,10 @@ from statsmodels.stats.moment_helpers import corr2cov
 import warnings
 
 from data_eng_pres import states_with_std_all, state_readable_with_id, polls, states_ec, nat_diff, harris_trump_data_interp, states_abb, margin_rating, margin_with_party
-from fundamentals_model import cpvi, pred_harris_stdev, pred_trump_stdev
+from fundamentals_model_output import pred_harris_stdev, pred_trump_stdev
 
 corr_matrix = pd.read_csv('data/fundamentals/state_correlation_matrix.csv')
+cpvi = pd.read_csv('data/fundamentals/cpvi_modified.csv')
 
 expected_polling_shift = 4.8
 expected_polling_error = 4
