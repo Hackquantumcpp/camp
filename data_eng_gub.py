@@ -81,7 +81,7 @@ def margin_with_party(margin):
         direc = 'R'
     else:
         direc = 'D'
-    return direc + '+' + f'{abs(margin):.1f}'
+    return direc + '+' + f'{abs(margin):.1f}%'
 
 state_avgs_df['Rating'] = state_avgs_df['Margin'].map(margin_rating)
 state_avgs_df['Label'] = state_avgs_df['Margin'].map(margin_with_party)

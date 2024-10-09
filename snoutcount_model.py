@@ -225,7 +225,10 @@ def adjust_margins(k=10000, method='cholesky', return_chances=False, return_samp
 #             chance = np.mean(samples > 0)
 #             chances.update({margin[2]: chance})
 #             samples_dict.update({margin[2]: samples})
-        adjusted_margins_samples = scipy.stats.multivariate_normal.rvs(adjusted_margins.values, cov=nearest_positive_definite(cov_matrix), size=k+1)
+        try:
+            adjusted_margins_samples = scipy.stats.multivariate_normal.rvs(adjusted_margins.values, cov=cov_matrix, size=k+1)
+        except ValueError:
+            adjusted_margins_samples = scipy.stats.multivariate_normal.rvs(adjusted_margins.values, cov=nearest_positive_definite(cov_matrix), size=k+1)
 #        dof = 5
 #        adjusted_margins_samples = scipy.stats.multivariate_t(df=5, shape=nearest_positive_definite(cov_matrix), loc=np.zeros((states.shape[0], k+1))) 
         # print(adjusted_margins_samples)
@@ -686,6 +689,7 @@ fig_projection_margins.update_traces(
 harris_ev_sims = all_sims_ev()
 sims_df = pd.DataFrame(harris_ev_sims).rename({0:'ev'}, axis=1)
 sims_df['winner'] = sims_df['ev'].map(lambda x: 'Harris win' if x > 269 else 'Trump win')
+sims_df = sims_df.sort_values(['winner'], ascending=True)
 fig_sims = px.histogram(data_frame=sims_df, x='ev', color='winner', labels={'ev':'EV Bin', 'count':'Sim Count'})
 fig_sims.add_vline(x=270, line_dash='dot', annotation_text='Winning Threshold', annotation_position='top right')
 fig_sims.update_layout(

@@ -166,7 +166,7 @@ def margin_with_party(margin):
         direc = 'R'
     else:
         direc = 'D'
-    return direc + '+' + f'{abs(margin):.1f}'
+    return direc + '+' + f'{abs(margin):.1f}%'
 
 states['Rating'] = states['Margin'].map(margin_rating)
 states['Label'] = states['Margin'].map(margin_with_party)

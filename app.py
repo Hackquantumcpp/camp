@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
+import numpy as np
 # import datetime
 
 # Import our data engineering and plot structuring files
@@ -278,6 +279,7 @@ app.layout = html.Div(
                         html.Br(),
                         html.Div(id='harris_sim_ev', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'}),
                         html.Div(id='trump_sim_ev', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'}),
+                        html.Div(id='sim_polling_error', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'}),
                         html.Br(),
                         dcc.Graph(
                             id='simulation',
@@ -475,6 +477,7 @@ def state_timeseries_fetch(hoverData):
     Output(component_id='simulation', component_property='figure'),
     Output(component_id='harris_sim_ev', component_property='children'),
     Output(component_id='trump_sim_ev', component_property='children'),
+    Output(component_id='sim_polling_error', component_property='children'),
     Input(component_id='simulate-button', component_property='n_clicks')
 )
 def simulate_election(n_clicks):
@@ -483,13 +486,20 @@ def simulate_election(n_clicks):
     scenarios_df_choro['margin_for_choropleth'] = scenarios_df_choro['margin'].map(lambda x: max(-15, min(x, 15)))
     scenarios_df_choro['Rating'] = scenarios_df_choro['margin'].map(scm.margin_rating)
     scenarios_df_choro['Label'] = scenarios_df_choro['margin'].map(scm.margin_with_party)
+    polling_errors = (scm.chances_df['margin'] - scenarios_df_choro.set_index('state')['margin'])
+    sim_polling_error = np.mean(polling_errors)
+    sim_polling_error_display = ('Harris' if sim_polling_error > 0 else 'Trump') + f' Overestimated by {abs(sim_polling_error):.2f}%'
+    scenarios_df_choro = scenarios_df_choro.set_index(['state'])
+    scenarios_df_choro['polling_errors'] = polling_errors
+    scenarios_df_choro = scenarios_df_choro.reset_index()
+    scenarios_df_choro['polling_error_display'] = scenarios_df_choro['polling_errors'].map(lambda x: ('Harris' if x > 0 else 'Trump') + f' Overestimated by {abs(x):.2f}%')
     fig_scenario_margins = px.choropleth(data_frame=scenarios_df_choro, locations='Abb_State', locationmode='USA-states', 
                             color='margin_for_choropleth',
                             color_continuous_scale='RdBu', range_color=[-15, 15], hover_name='index', 
-                            hover_data={'Abb_State':False, 'margin_for_choropleth':False, 'margin':False, 'Label':True, 'Rating':True},
-                            labels={'Label':'Projected Margin'}, height=1000)
+                            hover_data={'Abb_State':False, 'margin_for_choropleth':False, 'margin':False, 'Label':True, 'Rating':True, 'polling_error_display':True},
+                            labels={'Label':'Projected Margin', 'polling_error_display':'State Polling Error'}, height=1000)
     fig_scenario_margins.update_layout(
-        title_text = '2024 US Presidential Election SnoutCount Projected Margins - Fundamentals+Polls',
+        title_text = 'Simulated 2024 US Presidential Election',
         geo_scope='usa', # limit map scope to USA
         template='plotly_dark'
     )
@@ -504,10 +514,11 @@ def simulate_election(n_clicks):
         marker_line_color='black'
     )
 
-    harris_ev_stat = html.H6(children=f'Harris - {harris_sim_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'})
-    trump_ev_stat = html.H6(children=f'Trump - {538 - harris_sim_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'})
+    harris_ev_stat = html.H5(children=f'Harris - {harris_sim_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'})
+    trump_ev_stat = html.H5(children=f'Trump - {538 - harris_sim_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'})
+    sim_polling_error_stat = html.H5(children='Average Polling Error - ' + sim_polling_error_display, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if sim_polling_error > 0 else '#ff4a3d')})
 
-    return fig_scenario_margins, harris_ev_stat, trump_ev_stat
+    return fig_scenario_margins, harris_ev_stat, trump_ev_stat, sim_polling_error_stat
 
 # Live updates
 
