@@ -1,3 +1,3 @@
 ## Centralized Aggregate and Model of Polls (CAMP)
 
-CAMP is a lightweight web-based poll aggregator for the 2024 US presidential, senate, and gubernatorial elections. It displays trends and averages for both national and state-level polling.
+CAMP is a lightweight web-based poll aggregator for the 2024 US presidential, senate, and gubernatorial elections. It displays trends and averages for both national and state-level polling. It also includes the SnoutCount model, an amateur election prediction model that aims to predict the likelihood of either candidate in the presidential election of winning the race and individual states.
