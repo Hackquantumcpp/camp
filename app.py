@@ -23,12 +23,12 @@ server = app.server
 election_chances_card =dbc.Card(
     dbc.CardBody(
         [
-            html.H6(children='Election Chances', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.H6(children='Election Win Chances', style={'textAlign':'center', 'font-family':'Lucida Console'}),
             html.Div(children=f'Harris - {scm.harris_ev_win_chance * 100:.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'},
                                 id='harris-chance'),
             html.Div(children=f'Trump - {scm.trump_ev_win_chance * 100:.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'},
                                 id='trump-chance'),
-            html.Div(children=f'Tie - {scm.tie_chance:.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'white'},
+            html.Div(children=f'Tie - {scm.tie_chance * 100:.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'white'},
                                 id='tie-chance')
         ]
     ), style={'width':'18rem'}, color=('primary' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else 'danger'), outline=True
@@ -44,6 +44,18 @@ projected_ev_card =dbc.Card(
                                 id='trump-ev-projection')
         ]
     ), style={'width':'18rem'}, color=('primary' if scm.harris_projected_evs > scm.trump_projected_evs else 'danger'), outline=True
+)
+
+tp_chances_card =dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children=f'Win Chances in Most Frequent Tipping Point ({scm.tp_freq_display.index.values[0]})', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.Div(children=f'Harris - {scm.tp_harris_chance * 100:.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'},
+                                id='harris-tp-chance'),
+            html.Div(children=f'Trump - {100 - (scm.tp_harris_chance * 100):.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'},
+                                id='trump-tp-chance')
+        ]
+    ), style={'width':'18rem'}, color=('primary' if scm.projection.loc[scm.tp_freq_display.index.values[0], 'margin'] > 0.5 else 'danger'), outline=True
 )
 
 polled_ev_card =dbc.Card(
@@ -196,7 +208,8 @@ app.layout = html.Div(
                     dbc.Row(
                         [
                             dbc.Col(election_chances_card, width='auto'),
-                            dbc.Col(projected_ev_card, width='auto')
+                            dbc.Col(projected_ev_card, width='auto'),
+                            dbc.Col(tp_chances_card, width='auto')
                         ], style={'justify-content':'center'}
                     ),
                     html.Br(),

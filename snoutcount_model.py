@@ -492,6 +492,57 @@ def all_sims_ev():
         harris_ev_sims.append(harris_winning)
     return harris_ev_sims
 
+def find_tipping_point(one_sim: pd.Series):
+    # Presuming that the index of series contains the states
+    def winner(margin):
+        # 1 = Harris, 0 = Trump
+        return 1 if margin > 0 else 0
+    states_ec_dict_nonat = states_ec_dict.copy()
+    states_ec_dict_nonat.pop('United States')
+    harris_winning = np.sum(np.vectorize(winner)(one_sim) * np.vectorize(lambda x: x['ElectoralVotes'])(np.array(list(states_ec_dict_nonat.values()))))
+    if harris_winning > 269:
+        winners_states = one_sim[one_sim > 0]
+        winning_ec = harris_winning
+    elif harris_winning < 269:
+        winners_states = one_sim[one_sim < 0]
+        winning_ec = 538 - harris_winning
+    else:
+        return 'N/A'
+    winners_states = pd.DataFrame(winners_states.map(abs))
+    winners_states = winners_states.sort_values(winners_states.columns.values[0], ascending=True)
+    while winning_ec - states_ec_dict[winners_states.index.values[0]]['ElectoralVotes'] > 269:
+        state = winners_states.index.values[0]
+        winning_ec -= states_ec_dict[state]['ElectoralVotes']
+        winners_states = winners_states[1:]
+    state = winners_states.index.values[0]
+    return state
+
+# sim, _ = simulate()
+# print(find_tipping_point(sim['margin']))
+
+def tipping_point_frequencies(threshold=5):
+    tipping_points = []
+    def winner(margin):
+        # 1 = Harris, 0 = Trump
+        return 1 if margin > 0 else 0
+    states_ec_dict_nonat = states_ec_dict.copy()
+    states_ec_dict_nonat.pop('United States')
+    for index in range(polls_samples.shape[1]):
+        polls_scenario = polls_samples[:, index]
+        # fund_scenario = fund_samples[:, index]
+        fund_scenario = fund_preds['margin']
+        scenario = polls_weight * polls_scenario + fund_weight * fund_scenario
+        scenario_df = pd.DataFrame({'state':full_state_list, 'margin':scenario})
+        tp_state = find_tipping_point(scenario_df['margin'])
+        tipping_points.append(tp_state)
+    tp_freq = (pd.Series(tipping_points).value_counts() / len(tipping_points) * 100)
+    tp_freq = tp_freq[tp_freq > threshold]
+    tp_freq_display = tp_freq.map(lambda x: f'{x:.2f}%')
+    return tp_freq_display
+
+tp_freq_display = tipping_point_frequencies()
+tp_harris_chance = projection.loc[tp_freq_display.index.values[0], 'chance']
+
 
 ####################
 
