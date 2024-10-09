@@ -259,7 +259,11 @@ app.layout = html.Div(
                         id='sims-histogram',
                         figure=scm.fig_sims,
                         style={'justify':'center', 'width':'auto'}
-                    )], label='Combined'),
+                    ),
+                    html.Div(dbc.Table.from_dataframe(
+                        pd.DataFrame(scm.tp_freq_display).reset_index().rename({'count':'Tipping Point Probability', 'index':'Most Frequent Tipping Point States'}, axis=1), striped=True, bordered=True, hover=True, responsive=True,
+                        style={'font-family':'monospace', 'width':'49%', 'margin':'auto'}
+                    )),], label='Combined'),
                     dbc.Tab([
                         html.Br(),
                         html.H4(children=f"{'Harris' if scm.polls_ev_pred['harris'] > scm.polls_ev_pred['trump'] else 'Trump'} is leading with a {max(scm.polls_ev_pred['harris'], scm.polls_ev_pred['trump']) * 100:.1f}% chance of winning the election in the SnoutCount polls-only model.",
@@ -506,6 +510,9 @@ def simulate_election(n_clicks):
     scenarios_df_choro['polling_errors'] = polling_errors
     scenarios_df_choro = scenarios_df_choro.reset_index()
     scenarios_df_choro['polling_error_display'] = scenarios_df_choro['polling_errors'].map(lambda x: ('Harris' if x > 0 else 'Trump') + f' Overestimated by {abs(x):.2f}%')
+    scenarios_df_choro['winner'] = scenarios_df_choro['margin'].map(lambda x: 'Harris' if x > 0 else 'Trump')
+    scenarios_df_choro = scenarios_df_choro.sort_values(['winner'], ascending=True)
+    
     fig_scenario_margins = px.choropleth(data_frame=scenarios_df_choro, locations='Abb_State', locationmode='USA-states', 
                             color='margin_for_choropleth',
                             color_continuous_scale='RdBu', range_color=[-15, 15], hover_name='index', 
@@ -524,6 +531,27 @@ def simulate_election(n_clicks):
     ))
 
     fig_scenario_margins.update_traces(
+        marker_line_color='black'
+    )
+
+    fig_scenario_no_margins = px.choropleth(data_frame=scenarios_df_choro, locations='Abb_State', locationmode='USA-states', 
+                            color='winner',
+                            color_continuous_scale='RdBu', range_color=[-15, 15], hover_name='index', 
+                            hover_data={'Abb_State':False, 'margin_for_choropleth':False, 'margin':False, 'Label':True, 'Rating':True, 'polling_error_display':True},
+                            labels={'winner':'Winner', 'Label':'Projected Margin', 'polling_error_display':'State Polling Error'}, height=1000)
+    fig_scenario_no_margins.update_layout(
+        title_text = 'Simulated 2024 US Presidential Election',
+        geo_scope='usa', # limit map scope to USA
+        template='plotly_dark'
+    )
+
+    fig_scenario_no_margins.update_layout(coloraxis_colorbar=dict(
+        title='Margin',
+        tickvals=[-15, -10, -5, 0, 5, 10, 15],
+        ticktext=['>R+15', 'R+10', 'R+5', 'EVEN', 'D+5', 'D+10', '>D+15']
+    ))
+
+    fig_scenario_no_margins.update_traces(
         marker_line_color='black'
     )
 
