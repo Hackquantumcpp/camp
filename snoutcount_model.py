@@ -9,15 +9,22 @@ import scipy
 from statsmodels.stats.moment_helpers import corr2cov
 # from statsmodels.stats.correlation_tools import cov_nearest, corr_nearest, corr_clipped
 import warnings
+import datetime
 
 from data_eng_pres import states_with_std_all, state_readable_with_id, polls, states_ec, nat_diff, harris_trump_data_interp, states_abb, margin_rating, margin_with_party
 from fundamentals_model_output import pred_harris_stdev, pred_trump_stdev
 
 corr_matrix = pd.read_csv('data/fundamentals/state_correlation_matrix.csv')
 cpvi = pd.read_csv('data/fundamentals/cpvi_modified.csv')
+polls_movement_df = pd.read_csv('data/fundamentals/polls_movement.csv') # Hand typed, data from:
+# https://abcnews.go.com/538/538s-2024-presidential-election-forecast-works/story?id=113068753
+# Only includes polls movement up to 35 days
+election_day = datetime.date(2024, 11, 5)
+today = datetime.date.today()
+days_left = (election_day - today).days
 
-expected_polling_shift = 4.8
-expected_polling_error = 4
+expected_polling_shift = polls_movement_df[polls_movement_df['days_before_nov5'] == days_left]['movement']
+expected_polling_error = 4 + expected_polling_shift
 weights = state_readable_with_id['Weight in State Polling Average'].to_numpy()
 
 states_ec_dict = states_ec.set_index('state').to_dict('index')
@@ -683,7 +690,7 @@ fig_states_fund_margins.update_traces(
 ##### MODEL PROJECTION ######
 
 projection_for_choropleth = projection.reset_index().merge(states_abb, left_on='index', right_on='Full_State').drop(['Full_State'], axis=1)
-projection_for_choropleth['rounded_chance'] = projection_for_choropleth['chance'].map(lambda x: np.round(x, decimals=2))
+projection_for_choropleth['rounded_chance'] = projection_for_choropleth['chance'].map(lambda x: np.round(x, decimals=3))
 projection_for_choropleth['trump_chance'] = 1 - projection_for_choropleth['rounded_chance']
 projection_for_choropleth['harris_chance_display'] = projection_for_choropleth['rounded_chance'].map(lambda x: f'{(x*100):.1f}%')
 projection_for_choropleth['trump_chance_display'] = projection_for_choropleth['trump_chance'].map(lambda x: f'{(x*100):.1f}%')
