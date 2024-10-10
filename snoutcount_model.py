@@ -464,8 +464,8 @@ def winner(chance):
 proj_ev = projection.copy()
 proj_ev['winner'] = proj_ev['chance'].map(winner)
 proj_ev = proj_ev.merge(states_ec, left_on=proj_ev.index, right_on='state')
-harris_projected_evs = np.sum(proj_ev['winner'] * proj_ev['ElectoralVotes'])
-trump_projected_evs = 538 - harris_projected_evs
+# harris_projected_evs = np.sum(proj_ev['winner'] * proj_ev['ElectoralVotes'])
+# trump_projected_evs = 538 - harris_projected_evs
 
 ####################
 
@@ -758,3 +758,7 @@ fig_sims.update_layout(
     legend_title='Winner',
     template='plotly_dark'
 )
+
+########
+harris_projected_evs = np.median(harris_ev_sims)
+trump_projected_evs = 538 - harris_projected_evs

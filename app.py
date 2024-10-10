@@ -37,7 +37,7 @@ election_chances_card =dbc.Card(
 projected_ev_card =dbc.Card(
     dbc.CardBody(
         [
-            html.H6(children='Projected Electoral College', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.H6(children='Median Projected Electoral College', style={'textAlign':'center', 'font-family':'Lucida Console'}),
             html.Div(children=f'Harris - {scm.harris_projected_evs}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'},
                                 id='harris-ev-projection'),
             html.Div(children=f'Trump - {scm.trump_projected_evs}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'},
