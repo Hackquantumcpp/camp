@@ -250,18 +250,24 @@ def get_state_averages_with_stdev(state_list):
     rep_avgs = []
     dem_stdevs = []
     rep_stdevs = []
+    margins = []
+    margin_stdevs = []
     for state in state_list:
         pipelined_df = state_avgs_pipeline(state).replace({'NA':0})
         dem_avg = np.sum(pipelined_df['Kamala Harris'] * pipelined_df['total_weights'])
         rep_avg = np.sum(pipelined_df['Donald Trump'] * pipelined_df['total_weights'])
         dem_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Kamala Harris'] - dem_avg)**2)
         rep_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Donald Trump'] - rep_avg)**2)
+        avg_margin = np.sum(pipelined_df['Kamala Harris'] * pipelined_df['total_weights'] - pipelined_df['Donald Trump'] * pipelined_df['total_weights'])
+        margin_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Kamala Harris'] - pipelined_df['Donald Trump'] - avg_margin)**2)
         dem_avgs.append(dem_avg)
         rep_avgs.append(rep_avg)
         dem_stdevs.append(dem_std)
         rep_stdevs.append(rep_std)
+        margins.append(avg_margin)
+        margin_stdevs.append(margin_std)
     
-    return pd.DataFrame({'state':state_list.tolist(), 'Kamala Harris':dem_avgs, 'Donald Trump':rep_avgs, 'harris_std':dem_stdevs, 'trump_std':rep_stdevs})
+    return pd.DataFrame({'state':state_list.tolist(), 'Kamala Harris':dem_avgs, 'Donald Trump':rep_avgs, 'harris_std':dem_stdevs, 'trump_std':rep_stdevs, 'margin':margins, 'margin_std':margin_stdevs})
 
 state_list = polls_for_state_avgs[polls_for_state_avgs['numeric_grade'] >= 1.9]['state'].value_counts().index.values
 full_state_list = polls_for_state_avgs['state'].value_counts().index.values

@@ -61,6 +61,7 @@ def margins_for_unpolled_states(state_list):
     harris_std, trump_std = np.full(shape=harris.shape, fill_value=expected_polling_error), np.full(shape=harris.shape, fill_value=expected_polling_error)
     df = pd.concat([harris, trump], axis=1)
     df['harris_std'], df['trump_std'] = harris_std, trump_std
+    df['margin'], df['margin_std'] = df['dem_3pvi'] - df['rep_3pvi'], np.full(shape=harris.shape, fill_value=expected_polling_error)
     df = df.reset_index().rename({'dem_3pvi':'Kamala Harris', 'rep_3pvi':'Donald Trump', 'State':'state'}, axis=1)
     df = df[~df['state'].isin(states_with_std_all['state'].values)]
     return df
@@ -70,10 +71,10 @@ def all_state_polled_margins():
     df = pd.concat([states_with_std_all, unpolled], axis=0)
     
     # Convention: positive = Harris advantage, negative = Trump advantage
-    df['margin'] = df['Kamala Harris'] - df['Donald Trump']
+    # df['margin'] = df['Kamala Harris'] - df['Donald Trump']
     
     df = df.sort_values(by=['state'])
-    df['margin_std'] = np.sqrt(df['harris_std']**2 + df['trump_std']**2)
+    # df['margin_std'] = np.sqrt(df['harris_std']**2 + df['trump_std']**2)
     return df
 
 ############################################################################################
