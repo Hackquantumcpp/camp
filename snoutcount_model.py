@@ -556,7 +556,7 @@ tp_harris_chance = projection.loc[tp_freq_display.index.values[0], 'chance']
 
 def chance_rating(chance):
     # NOTE: chance MUST be Harris win probability!
-    if chance >= 0.97:
+    if chance >= 0.975:
         return 'Solid Harris'
     elif chance >= 0.75:
         return 'Likely Harris'
