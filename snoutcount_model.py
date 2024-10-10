@@ -566,7 +566,7 @@ def chance_rating(chance):
         return 'Tossup'
     elif chance >= 0.25:
         return 'Lean Trump'
-    elif chance >= 0.03:
+    elif chance >= 0.025:
         return 'Likely Trump'
     else:
         return 'Solid Trump'
