@@ -247,8 +247,9 @@ app.layout = html.Div(
             html.Br(),
             dbc.Tabs(
                 [
-                    dbc.Tab([html.Br(), html.H4(children=f"{'Harris' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else 'Trump'} is leading with a {max(scm.harris_ev_win_chance, scm.trump_ev_win_chance) * 100:.1f}% chance of winning the election in the SnoutCount combined fundamentals+polls model.",
-                            style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else '#ff4a3d')}),
+                    dbc.Tab([
+                    html.Br(), html.H4(children=f"{'Harris' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else 'Trump'} is leading with a {max(scm.harris_ev_win_chance, scm.trump_ev_win_chance) * 100:.1f}% chance of winning the election in the SnoutCount combined fundamentals+polls model.",
+                        style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if scm.harris_ev_win_chance > scm.trump_ev_win_chance else '#ff4a3d')}),
                     html.Br(),
                     dcc.Graph(
                         id='projection',
@@ -297,6 +298,7 @@ app.layout = html.Div(
                         html.Div(id='harris_sim_ev', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'}),
                         html.Div(id='trump_sim_ev', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'}),
                         html.Div(id='sim_polling_error', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'}),
+                        html.Div(id='sim_tipping_point', style={'textAlign':'center', 'font-family':'Lucida Console'}),
                         html.Br(),
                         dcc.Graph(
                             id='simulation',
@@ -495,6 +497,7 @@ def state_timeseries_fetch(hoverData):
     Output(component_id='harris_sim_ev', component_property='children'),
     Output(component_id='trump_sim_ev', component_property='children'),
     Output(component_id='sim_polling_error', component_property='children'),
+    Output(component_id='sim_tipping_point', component_property='children'),
     Input(component_id='simulate-button', component_property='n_clicks')
 )
 def simulate_election(n_clicks):
@@ -512,6 +515,7 @@ def simulate_election(n_clicks):
     scenarios_df_choro['polling_error_display'] = scenarios_df_choro['polling_errors'].map(lambda x: ('Harris' if x > 0 else 'Trump') + f' Overestimated by {abs(x):.2f}%')
     scenarios_df_choro['winner'] = scenarios_df_choro['margin'].map(lambda x: 'Harris' if x > 0 else 'Trump')
     scenarios_df_choro = scenarios_df_choro.sort_values(['winner'], ascending=True)
+    sim_tipping_point = scm.find_tipping_point(scenario_df['margin'])
     
     fig_scenario_margins = px.choropleth(data_frame=scenarios_df_choro, locations='Abb_State', locationmode='USA-states', 
                             color='margin_for_choropleth',
@@ -558,8 +562,9 @@ def simulate_election(n_clicks):
     harris_ev_stat = html.H5(children=f'Harris - {harris_sim_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'})
     trump_ev_stat = html.H5(children=f'Trump - {538 - harris_sim_ev}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'})
     sim_polling_error_stat = html.H5(children='Average Polling Error - ' + sim_polling_error_display, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if sim_polling_error > 0 else '#ff4a3d')})
+    sim_tipping_point_stat = html.H5(children='Tipping Point State - ' + sim_tipping_point, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if harris_sim_ev > 269 else '#ff4a3d')})
 
-    return fig_scenario_margins, harris_ev_stat, trump_ev_stat, sim_polling_error_stat
+    return fig_scenario_margins, harris_ev_stat, trump_ev_stat, sim_polling_error_stat, sim_tipping_point_stat
 
 # Live updates
 
