@@ -55,7 +55,7 @@ tp_chances_card =dbc.Card(
             html.Div(children=f'Trump - {100 - (scm.tp_harris_chance * 100):.2f}%', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'},
                                 id='trump-tp-chance')
         ]
-    ), style={'width':'18rem'}, color=('primary' if scm.projection.loc[scm.tp_freq_display.index.values[0], 'margin'] > 0.5 else 'danger'), outline=True
+    ), style={'width':'18rem'}, color=('primary' if scm.tp_harris_chance > 0.5 else 'danger'), outline=True
 )
 
 polled_ev_card =dbc.Card(
@@ -198,7 +198,7 @@ app.layout = html.Div(
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: October 11, 2024 6:45 PM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: October 11, 2024 7:15 PM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
