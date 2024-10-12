@@ -10,6 +10,7 @@ from statsmodels.stats.moment_helpers import corr2cov
 # from statsmodels.stats.correlation_tools import cov_nearest, corr_nearest, corr_clipped
 import warnings
 import datetime
+from pathlib import Path
 
 from data_eng_pres import states_with_std_all, state_readable_with_id, polls, states_ec, nat_diff, harris_trump_data_interp, states_abb, margin_rating, margin_with_party
 from fundamentals_model_output import pred_harris_stdev, pred_trump_stdev
@@ -466,6 +467,12 @@ proj_ev['winner'] = proj_ev['chance'].map(winner)
 proj_ev = proj_ev.merge(states_ec, left_on=proj_ev.index, right_on='state')
 # harris_projected_evs = np.sum(proj_ev['winner'] * proj_ev['ElectoralVotes'])
 # trump_projected_evs = 538 - harris_projected_evs
+
+####################
+
+filepath_proj = Path('data/model_output/combined_model_output.csv')
+filepath_proj.parent.mkdir(parents=True, exist_ok=True)
+projection.to_csv(filepath_proj)
 
 ####################
 
