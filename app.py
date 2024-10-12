@@ -348,6 +348,10 @@ app.layout = html.Div(
                 )
             ]),
             html.Br(),
+            # dcc.RadioItems(
+            #     options=['Candidates', 'Margin'], value='Candidates', id='state-timeseries-radio-items'
+            # ),
+            # html.Br(),
             html.H4(
                 children='State Polls Utilized',
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
@@ -473,15 +477,16 @@ def filter_senate_polls_table(val):
 
 @callback(
     Output(component_id='state-timeseries', component_property='figure'),
-    Input(component_id='competitive-state-polling', component_property='hoverData')
+    Input(component_id='competitive-state-polling', component_property='hoverData'),
+    # Input(component_id='state-timeseries-radio-items', component_property='value')
 )
 def state_timeseries_fetch(hoverData):
     state = hoverData['points'][0]['y'] # ['y']# [0]['customdata']
     # print(state)
     timeseries_df = state_timeseries[state]
-    fig_line = px.line(data_frame=timeseries_df, x='Date', y=['Kamala Harris', 'Donald Trump'], title=state)
+    fig = px.line(data_frame=timeseries_df, x='Date', y=['Kamala Harris', 'Donald Trump'], title=state)
     # fig_scatter = px.scatter(data_frame=de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == state].set_index('Date'), y=['Kamala Harris', 'Donald Trump'], opacity=0.5)
-    fig = go.Figure(data=fig_line.data)# + fig_scatter.data)
+    # fig = go.Figure(data=fig_line.data)# + fig_scatter.data)
     fig.update_traces(hovertemplate=None)
     fig.update_layout(
         title=f'{state} Polling Average',

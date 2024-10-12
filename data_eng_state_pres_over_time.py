@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import scipy
 import datetime
 import warnings
-from data_eng_pres import pipeline, polls_for_state_avgs, competitive
+from data_eng_pres import pipeline, polls_for_state_avgs, competitive# , margin_rating, margin_with_party
 
 def state_avgs_pipeline(state: str, date: datetime.date):
     state_race = polls_for_state_avgs[polls_for_state_avgs['state'] == state]# [senate['party'].isin(['DEM', 'REP'])]
@@ -87,6 +87,8 @@ def get_state_timeseries(state_list):
     for state in state_list:
         state_ts = get_state_average_over_time(state)
         # state_ts['Margin'] = state_ts['Kamala Harris'] - state_ts['Donald Trump']
+        # state_ts['Rating'] = state_ts['Margin'].map(margin_rating)
+        # state_ts['Label'] = state_ts['Margin'].map(margin_with_party)
         state_series.update({state: state_ts})
     return state_series
 
