@@ -469,11 +469,6 @@ proj_ev = proj_ev.merge(states_ec, left_on=proj_ev.index, right_on='state')
 # trump_projected_evs = 538 - harris_projected_evs
 
 ####################
-
-filepath_proj = Path('data/model_output/combined_model_output.csv')
-filepath_proj.parent.mkdir(parents=True, exist_ok=True)
-projection.to_csv(filepath_proj)
-
 ####################
 
 def simulate():

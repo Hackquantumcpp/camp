@@ -193,6 +193,7 @@ def contains_substr_in_list(str_list, substr_list):
 
 def all_polls_with_weights(senate_data):
     state_list = senate_data['state'].value_counts().index.to_numpy()
+    state_list = np.delete(state_list, np.where(state_list == 'Puerto Rico')) ## For gubernatorial - will keep track of Puerto Rico's gubernatorial race in future update
     polls_df = state_avgs_pipeline(senate_data, state_list[0])
     cols = contains_substr_in_list(polls_df.columns.values, ['DEM', 'REP'])
     polls_df = polls_df.rename({cols[0]:'DEM', cols[1]:'REP'}, axis=1)

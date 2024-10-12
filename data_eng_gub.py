@@ -44,8 +44,10 @@ def round_to_five(x):
 state_polls['Weight for State Polling Average'] = state_polls['Weight for State Polling Average'].map(round_to_five)
 
 state_avgs = []
+state_list = governor_np['state'].value_counts().index.values
+state_list = np.delete(state_list, np.where(state_list == 'Puerto Rico'))
 
-for state in governor_np['state'].value_counts().index.values:
+for state in state_list:
     avg = get_state_averages(governor_np, state)
     state_avgs.append(avg)
 
