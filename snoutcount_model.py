@@ -697,11 +697,12 @@ projection_for_choropleth['trump_chance'] = 1 - projection_for_choropleth['round
 projection_for_choropleth['harris_chance_display'] = projection_for_choropleth['rounded_chance'].map(lambda x: f'{(x*100):.1f}%')
 projection_for_choropleth['trump_chance_display'] = projection_for_choropleth['trump_chance'].map(lambda x: f'{(x*100):.1f}%')
 projection_for_choropleth['Rating'] = projection_for_choropleth['chance'].map(chance_rating)
+projection_for_choropleth['Margin Label'] = projection_for_choropleth['margin'].map(margin_with_party)
 fig_projection = px.choropleth(data_frame=projection_for_choropleth, locations='Abb_State', locationmode='USA-states', 
                            color='chance',
                           color_continuous_scale='RdBu', range_color=[0, 1], hover_name='index', 
-                          hover_data={'Abb_State':False, 'chance':False, 'harris_chance_display':True, 'trump_chance_display':True, 'Rating':True}, 
-                          labels={'harris_chance_display':'Harris Win Chance', 'trump_chance_display':'Trump Win Chance'}, height=1000)
+                          hover_data={'Abb_State':False, 'chance':False, 'harris_chance_display':True, 'trump_chance_display':True, 'Rating':True, 'Margin Label':True}, 
+                          labels={'harris_chance_display':'Harris Win Chance', 'trump_chance_display':'Trump Win Chance', 'Rating':'Rating', 'Margin Label':'Projected Margin'}, height=1000)
 fig_projection.update_layout(
     title_text = '2024 US Presidential Election SnoutCount Projections - Fundamentals+Polls',
     geo_scope='usa', # limit map scope to USA
