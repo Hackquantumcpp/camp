@@ -465,7 +465,8 @@ nat_polls_ts_readable = nat_polls_ts.rename({'end_date_TS':'Date', 'sample_size'
 # nat_polls_ts_readable = nat_polls_ts_readable.merge(polls[['poll_id', 'display_name']], on='poll_id').rename({'display_name':'Pollster'}, axis=1)
 
 
-# Plots
+
+######### PLOTS/ CHARTS ##############
 # fig_line = px.line(data_frame=harris_trump_data, x='Date', y=['Kamala Harris', 'Donald Trump'], 
 #                    title='Harris vs. Trump National Polling', markers=False)
 

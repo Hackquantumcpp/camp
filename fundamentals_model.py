@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from functools import reduce
 from data_eng_pres import states_with_std, state_readable_with_id, polls
 from pathlib import Path
+import datetime
 # import arviz as az
 
 ################# FUNDAMENTALS MODEL ###################
@@ -22,6 +23,7 @@ gdp = pd.read_csv('data/fundamentals/GDP.csv')
 sales = pd.read_csv('data/fundamentals/real_manu_trade_sales.csv')
 past_pv = pd.read_csv('data/fundamentals/abramowitz.csv')
 cpvi = pd.read_csv('data/fundamentals/cpvi.csv')
+polls_movement_df = pd.read_csv('data/fundamentals/polls_movement.csv')
 
 consumer_sentiment = pd.read_csv('data/fundamentals/index_of_consumer_sentiment.csv').reset_index().iloc[1:, :3].rename(
     {'level_0':'Month', 'level_1':'Year', 'level_2':'ICS'}, axis='columns'
@@ -130,7 +132,10 @@ models_chal = bootstrap_model(1000, False)
 inc_predictions = np.array([model.predict(data_2024) for model in models_inc])
 chal_predictions = np.array([model.predict(data_2024) for model in models_chal])
 
-expected_temporal_shift = 6.5 # From 538:
+election_day = datetime.date(2024, 11, 5)
+today = datetime.date.today()
+days_left = (election_day - today).days
+expected_temporal_shift = polls_movement_df[polls_movement_df['days_before_nov5'] == days_left]['movement'].values[0] # From 538:
 # https://abcnews.go.com/538/538s-2024-presidential-election-forecast-works/story?id=110867585
 
 pred_harris_val = np.mean(inc_predictions)
