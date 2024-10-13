@@ -140,8 +140,8 @@ expected_temporal_shift = polls_movement_df[polls_movement_df['days_before_nov5'
 
 pred_harris_val = np.mean(inc_predictions)
 pred_trump_val = np.mean(chal_predictions)
-pred_harris_stdev = np.std(inc_predictions) + expected_temporal_shift
-pred_trump_stdev = np.std(chal_predictions) + expected_temporal_shift
+pred_harris_stdev = np.std(inc_predictions)# + expected_temporal_shift
+pred_trump_stdev = np.std(chal_predictions)# + expected_temporal_shift
 
 # Now to predict our state values from the fundamentals model
 cpvi_split = cpvi['CPVI'].str.split('+')
