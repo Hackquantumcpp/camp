@@ -13,6 +13,8 @@ warnings.filterwarnings('ignore')
 
 polls = pd.read_csv('https://projects.fivethirtyeight.com/polls-page/data/president_polls.csv')
 
+banned_pollsters = pd.read_csv('data/other/banned_pollsters.csv')['banned_pollsters']
+
 # Get dates
 dates = polls['end_date'].str.split('/')
 polls['end_month'] = dates.str[0].astype(int)
@@ -43,8 +45,9 @@ polls_np['state'] = polls_np['state'].fillna('National')
 polls_np['end_date_TS'] = pd.to_datetime(polls_np['end_date'])
 polls_for_state_avgs['end_date_TS'] = pd.to_datetime(polls_for_state_avgs['end_date'])
 
-# Also, highly important SurveyMonkey correction
-polls_np = polls_np[polls_np['pollster_rating_name'] != 'SurveyMonkey']
+# Get rid of polls by banned pollsters
+polls_np = polls_np[~polls_np['pollster_rating_name'].isin(banned_pollsters.values)]
+polls_for_state_avgs = polls_for_state_avgs[~polls_for_state_avgs['pollster_rating_name'].isin(banned_pollsters.values)]
 
 polls_pivot = pd.pivot_table(data=polls_np, values='pct', index=['poll_id', 'state', 'population', 'sample_size', 'end_date_TS', 'pollster_rating_name'], 
                              columns=['candidate_name'], 

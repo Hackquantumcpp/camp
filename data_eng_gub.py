@@ -7,12 +7,15 @@ import scipy
 import datetime
 import re
 
+banned_pollsters = pd.read_csv('data/other/banned_pollsters.csv')['banned_pollsters']
+
 governor = pd.read_csv('https://projects.fivethirtyeight.com/polls-page/data/governor_polls.csv')
 
 party_with_cand = governor['answer'] + ' (' + governor['party'] + ')'
 governor['party_with_cand'] = party_with_cand
 governor['end_date'] = pd.to_datetime(governor['end_date'])
 governor_recent = governor[governor['end_date'] >= pd.to_datetime('2024-04-01')]
+governor_recent = governor_recent[~governor_recent['pollster_rating_name'].isin(banned_pollsters.values)]
 
 # Only those currently running
 # From: https://en.wikipedia.org/wiki/2024_United_States_gubernatorial_elections#Race_summary

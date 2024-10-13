@@ -13,10 +13,13 @@ import json
 
 warnings.filterwarnings('ignore')
 
+banned_pollsters = pd.read_csv('data/other/banned_pollsters.csv')['banned_pollsters']
+
 generic = pd.read_csv('https://projects.fivethirtyeight.com/polls-page/data/generic_ballot_polls.csv')
 
 # So these are all national polls.
 generic_np = generic[(generic['partisan'].isna()) & (generic['numeric_grade'] >= 2.0)]
+generic_np = generic_np[~generic_np['pollster_rating_name'].isin(banned_pollsters.values)]
 
 def pipeline(data: pd.DataFrame) -> pd.DataFrame:
     # Preferring likely voter samples in polls with multiple samples
@@ -88,6 +91,7 @@ generic_curves = pd.DataFrame([dem_lowess[:, 1], rep_lowess[:, 1]]).T.rename({0:
 senate = pd.read_csv('https://projects.fivethirtyeight.com/polls-page/data/senate_polls.csv')
 senate['end_date'] = pd.to_datetime(senate['end_date'])
 senate_recent = senate[senate['end_date'] >= pd.to_datetime('2024-05-01')]
+senate_recent = senate_recent[~senate_recent['pollster_rating_name'].isin(banned_pollsters.values)]
 # Only include people who are CURRENTLY running in the race
 # Source: https://en.wikipedia.org/wiki/2024_United_States_Senate_elections
 curr_running = ['Gallego', 'Lake', 'Heredia-Quintana', 'Garvey',
