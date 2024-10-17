@@ -198,7 +198,7 @@ app.layout = html.Div(
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: October 17, 2024 7:45 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: October 17, 2024 8:00 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
@@ -524,7 +524,7 @@ def simulate_election(n_clicks):
     
     fig_scenario_margins = px.choropleth(data_frame=scenarios_df_choro, locations='Abb_State', locationmode='USA-states', 
                             color='margin_for_choropleth',
-                            color_continuous_scale='RdBu', range_color=[-15, 15], hover_name='index', 
+                            color_continuous_scale='RdBu', range_color=[-15, 15], hover_name='state', 
                             hover_data={'Abb_State':False, 'margin_for_choropleth':False, 'margin':False, 'Label':True, 'Rating':True, 'polling_error_display':True},
                             labels={'Label':'Projected Margin', 'polling_error_display':'State Polling Error'}, height=1000)
     fig_scenario_margins.update_layout(
