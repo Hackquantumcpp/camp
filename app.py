@@ -520,7 +520,7 @@ def simulate_election(n_clicks):
     scenarios_df_choro['polling_error_display'] = scenarios_df_choro['polling_errors'].map(lambda x: ('Harris' if x > 0 else 'Trump') + f' Overestimated by {abs(x):.2f}%')
     scenarios_df_choro['winner'] = scenarios_df_choro['margin'].map(lambda x: 'Harris' if x > 0 else 'Trump')
     scenarios_df_choro = scenarios_df_choro.sort_values(['winner'], ascending=True)
-    sim_tipping_point = scm.find_tipping_point(scenario_df['margin'])
+    sim_tipping_point = scm.find_tipping_point(scenario_df.set_index(['state'])['margin'])
     
     fig_scenario_margins = px.choropleth(data_frame=scenarios_df_choro, locations='Abb_State', locationmode='USA-states', 
                             color='margin_for_choropleth',

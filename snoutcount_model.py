@@ -12,7 +12,8 @@ import warnings
 import datetime
 from pathlib import Path
 
-from data_eng_pres import states_with_std_all, state_readable_with_id, polls, states_ec, nat_diff, harris_trump_data_interp, states_abb, margin_rating, margin_with_party
+from data_eng_pres import states_with_std_all, state_readable_with_id, polls, states_ec, nat_diff, harris_trump_data_interp, states_abb, margin_rating, margin_with_party, all_state_polls_with_weights
+from data_eng_pres import full_state_list as polled_states
 from fundamentals_model_output import pred_harris_stdev, pred_trump_stdev
 
 corr_matrix = pd.read_csv('data/fundamentals/state_correlation_matrix.csv')
@@ -53,9 +54,9 @@ def chance_for_unpolled_state(state: str):
     harris_nat, trump_nat = harris_trump_data_interp['Kamala Harris'].to_numpy()[-1], harris_trump_data_interp['Donald Trump'].to_numpy()[-1]
     harris, trump = harris_nat + state_data['dem_3pvi'].values[0], trump_nat + state_data['rep_3pvi'].values[0]
     
-    harris_dist = scipy.stats.norm.rvs(loc=harris, scale=expected_polling_error, 
+    harris_dist = scipy.stats.t.rvs(df=5, loc=harris, scale=expected_polling_error, 
                                     size=10001)
-    trump_dist = scipy.stats.norm.rvs(loc=trump, scale=expected_polling_error, 
+    trump_dist = scipy.stats.t.rvs(df=5, loc=trump, scale=expected_polling_error, 
                                    size=10001)
     
     return np.count_nonzero(harris_dist > trump_dist) / harris_dist.shape[0]
@@ -97,9 +98,9 @@ def simple_chances(return_samples=False):
         state_data = margins_df[margins_df['state'] == state]
         harris, trump = state_data['Kamala Harris'].values[0], state_data['Donald Trump'].values[0]
         harris_std, trump_std = state_data['harris_std'].values[0], state_data['trump_std'].values[0]
-        harris_dist = scipy.stats.norm.rvs(loc=harris, scale=(harris_std + expected_polling_error if harris_std != 2 else harris_std), 
+        harris_dist = scipy.stats.t.rvs(df=5, loc=harris, scale=(harris_std + expected_polling_error if harris_std != 2 else harris_std), 
                                     size=10001)
-        trump_dist = scipy.stats.norm.rvs(loc=trump, scale=(trump_std + expected_polling_error if trump_std != 2 else trump_std), 
+        trump_dist = scipy.stats.t.rvs(df=5, loc=trump, scale=(trump_std + expected_polling_error if trump_std != 2 else trump_std), 
                                    size=10001)
         chances.update({state: np.count_nonzero(harris_dist > trump_dist) / harris_dist.shape[0]})
         samples.update({state: harris_dist - trump_dist})
@@ -436,27 +437,92 @@ def fundamentals_ev_pred():
 
 #############################################
 
-polls_weight = 0.9
-fund_weight = 0.1
+# polls_weight = 0.9
+# fund_weight = 0.1
+
+all_state_polls = all_state_polls_with_weights(polled_states)
+poll_freq = all_state_polls['state'].value_counts()
+
+polls_weights = pd.DataFrame(poll_freq).reset_index().sort_values('state', ascending=True)
+# polls_weights['weights'] = polls_weights['count'].map(lambda x: np.sqrt(min(x, 20) / 24.5))
+
+def starting_polls_weight(x):
+    return 0.5 * (np.exp(-x/600) + (-x/600) + 1)
+
+polls_weights['weights'] = polls_weights['count'].map(lambda x: min(x, 20) * starting_polls_weight(days_left)/20)
+polls_weights = polls_weights.set_index('state')
+fund_weights = polls_weights.copy()
+fund_weights['weights'] = 1 - polls_weights['weights']
+polls_weights = polls_weights['weights']
+fund_weights = fund_weights['weights']
+
+default_poll_w = np.full(shape=full_state_list.shape[0], fill_value=0.02)
+default_fund_w = np.full(shape=full_state_list.shape[0], fill_value=0.98)
+state_series = pd.Series(full_state_list)
+weights_series = pd.Series(default_poll_w)
+unpolled_weights_p = pd.concat([state_series, weights_series], axis=1).rename({0: 'state', 1:'weights'}, axis=1)
+unpolled_weights_p = unpolled_weights_p[~unpolled_weights_p['state'].isin(states_with_std_all['state'].values)]
+unpolled_weights_f = unpolled_weights_p.copy()
+unpolled_weights_f['weights'] = 1 - unpolled_weights_f['weights']
+unpolled_weights_p, unpolled_weights_f = unpolled_weights_p.set_index(['state']), unpolled_weights_f.set_index(['state'])
+# unpolled_weights_p = pd.DataFrame(columns={'state':full_state_list, 'weights':default_poll_w}, index=range(full_state_list.shape[0]))# .set_index(['state'])
+
+polls_weights = pd.concat([polls_weights, unpolled_weights_p], axis=0).reset_index().sort_values('state').set_index(['state'])
+fund_weights = pd.concat([fund_weights, unpolled_weights_f], axis=0).reset_index().sort_values('state').set_index(['state'])
+
+# print(polls_weights) ## DEBUG
+
+# print(polls_weights, fund_weights) ## DEBUG
 
 polls_ev_pred = ev_pred()
 fund_ev_pred, fund_preds, fund_samples = fundamentals_ev_pred()
 polls_samples = np.array(list(samples.values()))
 fund_margins = cpvi.set_index(['State'])['projected_margin']
+
 fund_preds = pd.concat([fund_preds, fund_margins], axis=1).rename({'projected_margin':'margin'}, axis=1)
 
-projected_margins = polls_weight * chances_df['margin'] + fund_weight * fund_preds['margin']
-total_chance = polls_weight * chances_df['chance'] + fund_weight * fund_preds['chance']
+def combine_models(polls, fundamentals):
+    harris_ec = np.zeros(10001)
+    trump_ec = np.zeros(10001)
+    indices = np.random.choice(10001, 10001, replace=False)
+    polls_samp = polls[:, indices]
+    fund_samp = fundamentals[:, indices]
+    winner_dict_polls, winner_dict_fund, winner_dict = {}, {}, {}
+    for state, margins in zip(full_state_list, polls_samp):
+        winner_dict_polls[state] = margins
+    for state, margins in zip(full_state_list, fund_samp):
+        winner_dict_fund[state] = margins
+        winner_dict[state] = polls_weights.loc[state].values[0] * winner_dict_polls[state] + fund_weights.loc[state].values[0] * winner_dict_fund[state]
+    state_margins = pd.DataFrame(columns=['margin'], index=['state'])
+    state_chances = pd.DataFrame(columns=['chance'], index=['state'])
+    def harris_winner(margin):
+        return 1 if margin > 0 else 0
+    def trump_winner(margin):
+        return 0 if margin > 0 else 1
+    for state in full_state_list:
+        state_ec = states_ec_dict[state]['ElectoralVotes']
+        chance = np.mean(winner_dict[state] > 0)
+        state_margins_df = pd.DataFrame({'margin':np.mean(winner_dict[state])}, index=[state])
+        state_chance_df = pd.DataFrame({'chance': chance}, index=[state])
+        state_margins = pd.concat([state_margins, state_margins_df], axis=0)
+        state_chances = pd.concat([state_chances, state_chance_df], axis=0)
+        harris_winning = np.vectorize(harris_winner)(winner_dict[state])
+        trump_winning = np.vectorize(trump_winner)(winner_dict[state])
+        harris_ev = harris_winning * state_ec
+        trump_ev = trump_winning * state_ec
+        harris_ec += harris_ev
+        trump_ec += trump_ev# [:, 0]
+    chance = {'harris': np.mean(harris_ec > trump_ec), 'trump': np.mean(trump_ec > harris_ec), 'tie': np.mean(trump_ec == harris_ec)}
+    return chance, state_chances, state_margins, winner_dict
 
-# polls_ev_pred = ev_pred()
-# fund_ev_pred, fund_preds = fundamentals_ev_pred()
 
-harris_ev_win_chance = polls_weight * polls_ev_pred['harris'] + fund_weight * fund_ev_pred['harris']
-trump_ev_win_chance = polls_weight * polls_ev_pred['trump'] + fund_weight * fund_ev_pred['trump']
-tie_chance = polls_weight * polls_ev_pred['tie'] + fund_weight * fund_ev_pred['tie']
 
-projection = pd.concat([projected_margins, total_chance], axis=1)
-# projection
+total_chance, state_chances, projected_margins, simulations = combine_models(polls_samples, fund_samples)
+
+harris_ev_win_chance, trump_ev_win_chance, tie_chance = total_chance['harris'], total_chance['trump'], total_chance['tie']
+
+projection = pd.concat([projected_margins, state_chances], axis=1)
+
 
 def winner(chance):
     # Dealing with Harris chances
@@ -465,8 +531,6 @@ def winner(chance):
 proj_ev = projection.copy()
 proj_ev['winner'] = proj_ev['chance'].map(winner)
 proj_ev = proj_ev.merge(states_ec, left_on=proj_ev.index, right_on='state')
-# harris_projected_evs = np.sum(proj_ev['winner'] * proj_ev['ElectoralVotes'])
-# trump_projected_evs = 538 - harris_projected_evs
 
 ####################
 ####################
@@ -476,10 +540,7 @@ def simulate():
         # 1 = Harris, 0 = Trump
         return 1 if margin > 0 else 0
     index = np.random.choice(10000, 1)[0]
-    polls_scenario = polls_samples[:, index]
-    # fund_scenario = fund_samples[:, index]
-    fund_scenario = fund_preds['margin']
-    scenario = polls_weight * polls_scenario + fund_weight * fund_scenario
+    scenario = np.array(list(simulations.values()))[:, index]
     states_ec_dict_nonat = states_ec_dict.copy()
     states_ec_dict_nonat.pop('United States')
     harris_winning = np.sum(np.vectorize(winner)(scenario) * np.vectorize(lambda x: x['ElectoralVotes'])(np.array(list(states_ec_dict_nonat.values()))))
@@ -494,10 +555,7 @@ def all_sims_ev():
     states_ec_dict_nonat = states_ec_dict.copy()
     states_ec_dict_nonat.pop('United States')
     for index in range(polls_samples.shape[1]):
-        polls_scenario = polls_samples[:, index]
-        # fund_scenario = fund_samples[:, index]
-        fund_scenario = fund_preds['margin']
-        scenario = polls_weight * polls_scenario + fund_weight * fund_scenario
+        scenario = np.array(list(simulations.values()))[:, index]
         harris_winning = np.sum(np.vectorize(winner)(scenario) * np.vectorize(lambda x: x['ElectoralVotes'])(np.array(list(states_ec_dict_nonat.values()))))
         harris_ev_sims.append(harris_winning)
     return harris_ev_sims
@@ -507,6 +565,7 @@ def find_tipping_point(one_sim: pd.Series):
     def winner(margin):
         # 1 = Harris, 0 = Trump
         return 1 if margin > 0 else 0
+    # print('DEBUG:', one_sim)
     states_ec_dict_nonat = states_ec_dict.copy()
     states_ec_dict_nonat.pop('United States')
     harris_winning = np.sum(np.vectorize(winner)(one_sim) * np.vectorize(lambda x: x['ElectoralVotes'])(np.array(list(states_ec_dict_nonat.values()))))
@@ -538,11 +597,8 @@ def tipping_point_frequencies(threshold=5):
     states_ec_dict_nonat = states_ec_dict.copy()
     states_ec_dict_nonat.pop('United States')
     for index in range(polls_samples.shape[1]):
-        polls_scenario = polls_samples[:, index]
-        # fund_scenario = fund_samples[:, index]
-        fund_scenario = fund_preds['margin']
-        scenario = polls_weight * polls_scenario + fund_weight * fund_scenario
-        scenario_df = pd.DataFrame({'state':full_state_list, 'margin':scenario})
+        scenario = np.array(list(simulations.values()))[:, index]
+        scenario_df = pd.DataFrame({'state':full_state_list, 'margin':scenario}).set_index(['state'])
         tp_state = find_tipping_point(scenario_df['margin'])
         tipping_points.append(tp_state)
     tp_freq = (pd.Series(tipping_points).value_counts() / len(tipping_points) * 100)
@@ -698,10 +754,15 @@ projection_for_choropleth['harris_chance_display'] = projection_for_choropleth['
 projection_for_choropleth['trump_chance_display'] = projection_for_choropleth['trump_chance'].map(lambda x: f'{(x*100):.1f}%')
 projection_for_choropleth['Rating'] = projection_for_choropleth['chance'].map(chance_rating)
 projection_for_choropleth['Margin Label'] = projection_for_choropleth['margin'].map(margin_with_party)
+
+projection_for_choropleth = projection_for_choropleth.merge(polls_weights.reset_index(), left_on='index', right_on='state').drop(['state'], axis=1)
+projection_for_choropleth['Polling Influence'] = projection_for_choropleth['weights'].map(lambda x: f'{x*100:.1f}%')
+projection_for_choropleth['Fundamentals Influence'] = projection_for_choropleth['weights'].map(lambda x: f'{(1-x)*100:.1f}%')
+
 fig_projection = px.choropleth(data_frame=projection_for_choropleth, locations='Abb_State', locationmode='USA-states', 
                            color='chance',
                           color_continuous_scale='RdBu', range_color=[0, 1], hover_name='index', 
-                          hover_data={'Abb_State':False, 'chance':False, 'harris_chance_display':True, 'trump_chance_display':True, 'Rating':True, 'Margin Label':True}, 
+                          hover_data={'Abb_State':False, 'chance':False, 'harris_chance_display':True, 'trump_chance_display':True, 'Rating':True, 'Margin Label':True, 'Polling Influence':True, 'Fundamentals Influence':True}, 
                           labels={'harris_chance_display':'Harris Win Chance', 'trump_chance_display':'Trump Win Chance', 'Rating':'Rating', 'Margin Label':'Projected Margin'}, height=1000)
 fig_projection.update_layout(
     title_text = '2024 US Presidential Election SnoutCount Projections - Fundamentals+Polls',

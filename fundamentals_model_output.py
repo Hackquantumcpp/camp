@@ -1,5 +1,5 @@
-pred_harris_stdev = 25.600046831086594
-pred_trump_stdev = 13.676656808733242
-pred_harris_val = 47.89248400394826
-pred_trump_val = 45.94561088397093
-pred_margin = 1.946873119977333
+pred_harris_stdev = 27.748563979448942
+pred_trump_stdev = 12.828548238320908
+pred_harris_val = 48.132827878436736
+pred_trump_val = 46.13185655785109
+pred_margin = 2.0009713205856485
