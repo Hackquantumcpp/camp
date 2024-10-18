@@ -42,9 +42,9 @@ def chance_for_state(state: str):
     harris, trump = state_data['Kamala Harris'].values[0], state_data['Donald Trump'].values[0]
     harris_std, trump_std = state_data['harris_std'].values[0], state_data['trump_std'].values[0]
     
-    harris_dist = scipy.stats.t.rvs(df=5, loc=harris, scale=harris_std + expected_polling_error, 
+    harris_dist = scipy.stats.norm.rvs(loc=harris, scale=harris_std + expected_polling_error, 
                                     size=10001)
-    trump_dist = scipy.stats.t.rvs(df=5, loc=trump, scale=trump_std + expected_polling_error, 
+    trump_dist = scipy.stats.norm.rvs(loc=trump, scale=trump_std + expected_polling_error, 
                                    size=10001)
     
     return np.count_nonzero(harris_dist > trump_dist) / harris_dist.shape[0]
@@ -54,9 +54,9 @@ def chance_for_unpolled_state(state: str):
     harris_nat, trump_nat = harris_trump_data_interp['Kamala Harris'].to_numpy()[-1], harris_trump_data_interp['Donald Trump'].to_numpy()[-1]
     harris, trump = harris_nat + state_data['dem_3pvi'].values[0], trump_nat + state_data['rep_3pvi'].values[0]
     
-    harris_dist = scipy.stats.t.rvs(df=5, loc=harris, scale=expected_polling_error, 
+    harris_dist = scipy.stats.norm.rvs(loc=harris, scale=expected_polling_error, 
                                     size=10001)
-    trump_dist = scipy.stats.t.rvs(df=5, loc=trump, scale=expected_polling_error, 
+    trump_dist = scipy.stats.norm.rvs(loc=trump, scale=expected_polling_error, 
                                    size=10001)
     
     return np.count_nonzero(harris_dist > trump_dist) / harris_dist.shape[0]
