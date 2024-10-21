@@ -97,7 +97,7 @@ def bootstrap_lasso_once(inc: bool):
     else:
         y = y_chal
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
-    model = lm.Lasso(alpha=1, fit_intercept=False, max_iter=5000).fit(X_train, y_train)
+    model = lm.ElasticNet(alpha=1, l1_ratio=0.9, fit_intercept=False, max_iter=5000).fit(X_train, y_train)
     y_pred = model.predict(X)
     return model, y_pred
 
@@ -173,13 +173,13 @@ state_polling_data = state_readable_with_id.merge(polls[['poll_id', 'numeric_gra
 
 # stdevs = {'pred_harris_stdev':pred_harris_stdev, 'pred_trump_stdev':pred_trump_stdev}
 
-f = open('fundamentals_model_output.py', 'w')
-f.write('pred_harris_stdev = ' + repr(pred_harris_stdev) + '\n')
-f.write('pred_trump_stdev = ' + repr(pred_trump_stdev) + '\n')
-f.write('pred_harris_val = ' + repr(pred_harris_val) + '\n')
-f.write('pred_trump_val = ' + repr(pred_trump_val) + '\n')
-f.write('pred_margin = ' + repr(pred_harris_val - pred_trump_val) + '\n')
-f.close()
+with open('fundamentals_model_output.py', 'w') as f:
+    f.write('pred_harris_stdev = ' + repr(pred_harris_stdev) + '\n')
+    f.write('pred_trump_stdev = ' + repr(pred_trump_stdev) + '\n')
+    f.write('pred_harris_val = ' + repr(pred_harris_val) + '\n')
+    f.write('pred_trump_val = ' + repr(pred_trump_val) + '\n')
+    f.write('pred_margin = ' + repr(pred_harris_val - pred_trump_val) + '\n')
+
 
 filepath_cpvi = Path('data/fundamentals/cpvi_modified.csv')
 filepath_cpvi.parent.mkdir(parents=True, exist_ok=True)
