@@ -484,7 +484,7 @@ fund_preds = pd.concat([fund_preds, fund_margins], axis=1).rename({'projected_ma
 def combine_models(polls, fundamentals):
     harris_ec = np.zeros(10001)
     trump_ec = np.zeros(10001)
-    indices = np.random.choice(10001, 10001, replace=False)
+    indices = np.random.choice(10001, 10001, replace=True)
     polls_samp = polls[:, indices]
     fund_samp = fundamentals[:, indices]
     winner_dict_polls, winner_dict_fund, winner_dict = {}, {}, {}
