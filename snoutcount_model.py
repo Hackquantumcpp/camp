@@ -589,7 +589,7 @@ def find_tipping_point(one_sim: pd.Series):
 # sim, _ = simulate()
 # print(find_tipping_point(sim['margin']))
 
-def tipping_point_frequencies(threshold=5):
+def tipping_point_frequencies(threshold=3):
     tipping_points = []
     def winner(margin):
         # 1 = Harris, 0 = Trump

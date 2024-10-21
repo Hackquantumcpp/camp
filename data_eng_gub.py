@@ -57,6 +57,11 @@ for state in state_list:
 state_avgs_df = pd.DataFrame(state_avgs)
 state_avgs_df = state_avgs_df.rename({0:'state', 1:'DEM', 2:'REP', 3:'DEM_cand', 4:'REP_cand'}, axis=1)
 
+dem_cands = state_avgs_df['DEM_cand'].str.extract(r'(.+)\([A-za-z]{3}\)')
+rep_cands = state_avgs_df['REP_cand'].str.extract(r'(.+)\([A-za-z]{3}\)')
+state_avgs_df['DEM_cand'] = dem_cands
+state_avgs_df['REP_cand'] = rep_cands
+
 # By convention, for margin, positive -> Dem advantage, negative -> Rep advantage
 state_avgs_df['Margin'] = state_avgs_df['DEM'] - state_avgs_df['REP']
 
@@ -105,8 +110,8 @@ fig_governor = px.choropleth(
     range_color=[-20, 20],
     hover_name='state', 
     hover_data={'Abb_State':False, 'Rating':True, 'Margin':False, 'Label':True, 
-                'margin_for_choropleth':False},
-    labels={'Label':'Average Margin'},
+                'margin_for_choropleth':False, 'DEM_cand':True, 'REP_cand':True},
+    labels={'Label':'Average Margin', 'DEM_cand':'Democrat', 'REP_cand':'Republican'},
     height=1000
 )
 

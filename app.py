@@ -148,44 +148,6 @@ senate_bias_card = dbc.Card(
     ), color=('primary' if sen.senate_bias > 0 else 'danger'), outline=True
 )
 
-###### OVERVIEW - SWING STATE CARDS ######
-
-def display_margin(state):
-    # print(de.states[de.states['state'] == state])
-    disp_margin = abs(de.states[de.states['state'] == state]['Average Polling Margin'].values[0])
-    return ('Harris' if de.states[de.states['state'] == state]['Kamala Harris'].values[0] > de.states[de.states['state'] == state]['Donald Trump'].values[0] 
-                             else 'Trump') + f'+{disp_margin:.2f}%'
-
-def winner_color(state):
-    return ('primary' if de.states[de.states['state'] == state]['Kamala Harris'].values[0] > de.states[de.states['state'] == state]['Donald Trump'].values[0] 
-                             else 'danger')
-
-north_carolina_card = dbc.Card(
-    dbc.CardBody(
-        [
-            html.H5(children='North Carolina', style={'textAlign':'center', 'font-family':'Lucida Console'}),
-            dbc.CardImg(src=app.get_asset_url('north-carolina-outline.png'), style={'height':'15%', 'width':'auto'}),
-            html.H6(children=display_margin('North Carolina'),
-                             style={'textAlign':'center', 'font-family':'Lucida Console'})
-        ], style={'width':'18rem', 'height':'auto', 'textAlign':'center'}
-    ), color = winner_color('North Carolina'), outline=False
-)
-
-georgia_card = dbc.Card(
-    dbc.CardBody(
-        [
-            html.H5(children='Georgia', style={'textAlign':'center', 'font-family':'Lucida Console'}),
-            dbc.CardImg(src=app.get_asset_url('georgia-outline.png'), style={'height':'15%', 'width':'auto'}),
-            html.H6(children=display_margin('Georgia'),
-                             style={'textAlign':'center', 'font-family':'Lucida Console'})
-        ], style={'width':'18rem', 'height':'auto', 'textAlign':'center'}
-    ), color = winner_color('Georgia'), outline=False
-)
-
-
-##############################
-
-
 app.layout = html.Div(
         children=[
             html.Br(),
@@ -198,7 +160,7 @@ app.layout = html.Div(
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: October 20, 2024 7:05 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: October 21, 2024 1:30 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),

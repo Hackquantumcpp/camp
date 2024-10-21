@@ -435,8 +435,8 @@ fig_senate = px.choropleth(
     range_color=[-20, 20],
     hover_name='state', 
     hover_data={'Abb_State':False, 'Rating':True, 'Margin':False, 'Label':True, 
-                'margin_for_choropleth':False},
-    labels={'Label':'Average Margin'},
+                'margin_for_choropleth':False, 'DEM_cand': True, 'REP_cand': True},
+    labels={'Label':'Average Margin', 'DEM_cand':'Democrat', 'REP_cand':'Republican'},
     height=1000
 )
 
