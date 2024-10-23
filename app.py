@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 import numpy as np
 # import datetime
 
-# Import our data engineering, plot structuring, and modell files
+# Import our data engineering, plot structuring, and model files
 import data_eng_pres as de
 import data_eng_senate as sen
 import data_eng_gub as gub
@@ -16,6 +16,7 @@ import snoutcount_model as scm
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(__name__, external_stylesheets=[dbc.themes.CYBORG, dbc_css])
+app.title = 'Centralized Aggregate and Model of Polls'
 
 server = app.server
 
@@ -160,7 +161,7 @@ app.layout = html.Div(
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: October 23, 2024 1:45 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: October 23, 2024 8:00 PM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
@@ -406,11 +407,15 @@ app.layout = html.Div(
                 children='State Polls Utilized',
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
             ),
-            html.Div(dbc.Table.from_dataframe(
-                gub.state_polls, striped=True, bordered=True, hover=True, 
-                responsive=True,
-                style={'font-family':'monospace'}, 
-            ), style={'maxHeight':'400px', 'overflow':'scroll'}),
+            dcc.Dropdown(
+                options=['All', 'North Carolina', 'New Hampshire', 'Washington', 'Missouri'],
+                value='All',
+                id='governor-state-filter',
+                # inline=True,
+                searchable=True,
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
+            html.Div(style={'maxHeight':'400px', 'overflow':'scroll'}, id='governor-table'),
             html.Hr(),
             html.Div(
                 children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/'), ' | See the code on ', dcc.Link(children=['Github'], href='https://github.com/Hackquantumcpp/camp')],
@@ -443,6 +448,21 @@ def filter_senate_polls_table(val):
         data = sen.senate_state_polls.sort_values(by=['Date'], ascending=False)
     else:
         data = sen.senate_state_polls[sen.senate_state_polls['State'] == val].sort_values(by=['Date'], ascending=False)
+    return dbc.Table.from_dataframe(
+                df=data, striped=True, bordered=True, hover=True, 
+                responsive=True,
+                style={'font-family':'monospace'}, 
+            )
+
+@callback(
+    Output(component_id='governor-table', component_property='children'),
+    Input(component_id='governor-state-filter', component_property='value')
+)
+def filter_governor_polls_table(val):
+    if val == 'All':
+        data = gub.state_polls.sort_values(by=['Date'], ascending=False)
+    else:
+        data = gub.state_polls[gub.state_polls['State'] == val].sort_values(by=['Date'], ascending=False)
     return dbc.Table.from_dataframe(
                 df=data, striped=True, bordered=True, hover=True, 
                 responsive=True,
