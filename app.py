@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 import numpy as np
 # import datetime
 
-# Import our data engineering and plot structuring files
+# Import our data engineering, plot structuring, and modell files
 import data_eng_pres as de
 import data_eng_senate as sen
 import data_eng_gub as gub
@@ -160,7 +160,7 @@ app.layout = html.Div(
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: October 23, 2024 1:10 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: October 23, 2024 1:20 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
