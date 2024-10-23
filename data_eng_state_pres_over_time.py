@@ -1,10 +1,6 @@
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import scipy
 import datetime
-import warnings
 from data_eng_pres import pipeline, polls_for_state_avgs, competitive# , margin_rating, margin_with_party
 
 def state_avgs_pipeline(state: str, date: datetime.date):

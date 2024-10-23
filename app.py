@@ -11,8 +11,8 @@ import data_eng_pres as de
 import data_eng_senate as sen
 import data_eng_gub as gub
 from data_eng_state_pres_over_time import state_timeseries
+from data_eng_senate_seat_over_time import senate_timeseries
 import snoutcount_model as scm
-# import model as mod
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(__name__, external_stylesheets=[dbc.themes.CYBORG, dbc_css])
@@ -160,7 +160,7 @@ app.layout = html.Div(
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: October 22, 2024 6:30 PM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: October 23, 2024 12:55 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
@@ -301,7 +301,7 @@ app.layout = html.Div(
                 dcc.Graph(
                     id='competitive-state-polling',
                     figure=de.fig_comp,
-                    hoverData={'points': [{'y': 'Pennsylvania'}]},
+                    hoverData={'points': [{'y': de.tp_state}]},
                     style={'width':'50%', 'display':'inline-block'}
                 ),
                 dcc.Graph(
@@ -365,6 +365,18 @@ app.layout = html.Div(
                 figure=sen.fig_senate,
                 style={'justify':'center', 'width':'auto'},
             ),
+            html.Div([
+                dcc.Graph(
+                    id='competitive-senate-polling',
+                    figure=sen.fig_comp,
+                    hoverData={'points': [{'y': 'Ohio'}]},
+                    style={'width':'50%', 'display':'inline-block'}
+                ),
+                dcc.Graph(
+                    id='senate-timeseries',
+                    style={'width':'50%', 'display':'inline-block'}
+                )
+            ]),
             html.Br(),
             html.H4(
                 children='State Polls Utilized',
@@ -460,6 +472,28 @@ def state_timeseries_fetch(hoverData):
     return fig
 
 @callback(
+    Output(component_id='senate-timeseries', component_property='figure'),
+    Input(component_id='competitive-senate-polling', component_property='hoverData'),
+    # Input(component_id='state-timeseries-radio-items', component_property='value')
+)
+def state_timeseries_fetch(hoverData):
+    state = hoverData['points'][0]['y'] # ['y']# [0]['customdata']
+    # print(state)
+    timeseries_df = senate_timeseries[state]
+    fig = px.line(data_frame=timeseries_df, x='Date', y=['DEM', 'REP'], title=state)
+    # fig_scatter = px.scatter(data_frame=de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == state].set_index('Date'), y=['Kamala Harris', 'Donald Trump'], opacity=0.5)
+    # fig = go.Figure(data=fig_line.data)# + fig_scatter.data)
+    fig.update_traces(hovertemplate=None)
+    fig.update_layout(
+        title=f'{state} Senate Seat Polling Average',
+        xaxis_title='Date',
+        yaxis_title='Polled Vote %',
+        template='plotly_dark',
+        hovermode='x unified'
+    )
+    return fig
+
+@callback(
     Output(component_id='simulation', component_property='figure'),
     Output(component_id='harris_sim_ev', component_property='children'),
     Output(component_id='trump_sim_ev', component_property='children'),
@@ -532,62 +566,6 @@ def simulate_election(n_clicks):
     sim_tipping_point_stat = html.H5(children='Tipping Point State - ' + sim_tipping_point, style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if harris_sim_ev > 269 else '#ff4a3d')})
 
     return fig_scenario_margins, harris_ev_stat, trump_ev_stat, sim_polling_error_stat, sim_tipping_point_stat
-
-# Live updates
-
-# def update():
-#     importlib.reload(de)
-
-# @callback(
-#     Output('last-updated', 'children'),
-#     Input('interval-component', 'n_intervals')
-# )
-
-# def last_updated(n):
-#     update()
-#     return f'Last updated: {str(datetime.datetime.now())}'
-
-# @callback(
-#     Output('debug-last-updated', 'children'),
-#     Input('interval-component', 'n_intervals')
-# )
-# def debug_lu(n):
-#     return f'Debug: {str(datetime.datetime.now())}'
-
-# @callback(
-#     Output('harris-ev', 'children'),
-#     Input('interval-component', 'n_intervals')
-# )
-# def update_harris_ev(n):
-#     return f'Harris - {de.harris_polled_ev}'
-
-# @callback(
-#     Output('trump-ev', 'children'),
-#     Input('interval-component', 'n_intervals')
-# )
-# def update_trump_ev(n):
-#     return f'Trump - {de.trump_polled_ev}'
-
-# @callback(
-#     Output('nat-avg', 'children'),
-#     Input('interval-component', 'n_intervals')
-# )
-# def update_nat_avg(n):
-#     return de.nat_diff
-
-# @callback(
-#     Output('nat-avg', 'style'),
-#     Input('interval-component', 'n_intervals')
-# )
-# def update_nat_avg_style(n):
-#     return {'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if de.avg_lowess_diff > 0 else '#ff4a3d')}
-
-# @callback(
-#     Output('nat-avg', 'children'),
-#     Input('interval-component', 'n_intervals')
-# )
-# def update_tp_state(n):
-#     return f'Tipping Point Polling Average ({de.tp_state})'
 
 if __name__ == '__main__':
     app.run()

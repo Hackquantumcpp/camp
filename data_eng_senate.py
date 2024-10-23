@@ -323,6 +323,12 @@ sen_margin = dem_polled_sen_seats - rep_polled_sen_seats
 total = 100
 sen_margin /= (total / 100)
 
+competitive = state_averages_df_all[state_averages_df_all['state'].isin(['Ohio', 'Montana', 'Texas', 'Florida', 'Nebraska', 'Michigan', 'Pennsylvania',
+                                                                         'Wisconsin', 'Nevada', 'Arizona', 'Maryland'])]
+competitive = competitive.sort_values(by=['Margin'], ascending=False)
+leader = lambda x: 'Republicans' if x < 0 else 'Democrats'
+competitive['Leader'] = competitive['Margin'].map(leader)
+
 from data_eng_pres import harris_polled_ev, trump_polled_ev
 
 pres_winner = 'DEM' if harris_polled_ev > trump_polled_ev else 'REP'
@@ -459,3 +465,11 @@ fig_senate.update_layout(coloraxis_colorbar=dict(
     tickvals=[-20, -10, 0, 10, 20],
     ticktext=['>R+20', 'R+10', 'EVEN', 'D+10', '>D+20']
 ))
+
+fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='Leader', custom_data=['state'])
+
+fig_comp.update_layout(
+    title='Margins in Competitive Senate Seats',
+    yaxis_title='State',
+    template='plotly_dark'
+)
