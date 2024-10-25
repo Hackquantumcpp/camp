@@ -402,6 +402,23 @@ app.layout = html.Div(
                 figure = gub.fig_governor,
                 style={'justify':'center', 'width':'auto'}
             ),
+            # html.Div([
+            #     dcc.Graph(
+            #         id='puerto-rico-governor',
+            #         figure=gub.fig_pr,
+            #         style={'display':'inline-block', 'width':'50%'}
+            #     ),
+            #     # dcc.Graph(
+            #     #     id='puerto-rico-map',
+            #     #     figure=gub.fig_pr_map,
+            #     #     style={'display':'inline-block', 'width':'50%'}
+            #     # ),
+            # ]),
+            dcc.Graph(
+                id='puerto-rico-governor',
+                figure=gub.fig_pr,
+                style={'justify':'center', 'width':'auto'}
+            ),
             html.Br(),
             html.H4(
                 children='State Polls Utilized',
@@ -417,6 +434,7 @@ app.layout = html.Div(
             ),
             html.Div(style={'maxHeight':'400px', 'overflow':'scroll'}, id='governor-table'),
             html.Hr(),
+            html.Br(),
             html.Div(
                 children=['Polls dataset from ', dcc.Link(children=['538'], href='https://projects.fivethirtyeight.com/polls/president-general/2024/'), ' | See the code on ', dcc.Link(children=['Github'], href='https://github.com/Hackquantumcpp/camp')],
                         style={'textAlign':'center', 'font-family':'Lucida Console'}

@@ -133,15 +133,16 @@ def state_avgs_pipeline(senate_data: pd.DataFrame, state: str):
     
     # Sample size weights
     total_sample_size = np.sum(state_pivot['sample_size'])
-    state_pivot['sample_size_weights'] = state_pivot['sample_size'].map(np.sqrt) / np.sqrt(np.median(state_pivot['sample_size']))
+    state_pivot['sample_size_weights'] = state_pivot['sample_size'].map(lambda x: np.sqrt(min(x, 5000))) / np.sqrt(np.median(state_pivot['sample_size'].map(lambda x: min(x, 5000))))
     state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
     
     # Time weights
     # Variation of the equation used here: https://polls.votehub.us/
     latest_date = datetime.datetime.today()
     delta = (latest_date - state_pivot['end_date']).apply(lambda x: x.days)
-    state_pivot['time_weights'] = (0.4 * (1 - delta/((latest_date - state_pivot['end_date'].min()).days + 1)) + 
-                                  0.6 *(0.3**(delta/((latest_date - state_pivot['end_date'].min()).days + 1))))
+    timerange = (latest_date - state_pivot['end_date'].min()).days
+    state_pivot['time_weights'] = (0.4 * (1 - delta/(timerange + 1)) + 
+                                  0.6 *(0.3**(delta/(timerange + 1))))
     # state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
     
     # Quality weights
@@ -289,14 +290,14 @@ rep_cands = state_averages_df['REP_cand'].str.extract(r'(.+)\([A-za-z]{3}\)')
 state_averages_df['DEM_cand'] = dem_cands
 state_averages_df['REP_cand'] = rep_cands
 
-with open('data/other/us-states-senate-2024.json', 'r') as file:
-    senate_map = json.load(file)
+# with open('data/other/us-states-senate-2024.json', 'r') as file:
+#     senate_map = json.load(file)
 
-senate_json_df = pd.read_json('data/other/us-states-senate-2024.json')
-id_with_states = senate_json_df['features'].astype(str).str.extract(r"\{'type': 'Feature', 'id': '(\d{2})', 'properties': {'name': '([A-za-z\s]*)', .*\}")
-id_with_states = id_with_states.rename({0:'id', 1:'state'}, axis=1)
+# senate_json_df = pd.read_json('data/other/us-states-senate-2024.json')
+# id_with_states = senate_json_df['features'].astype(str).str.extract(r"\{'type': 'Feature', 'id': '(\d{2})', 'properties': {'name': '([A-za-z\s]*)', .*\}")
+# id_with_states = id_with_states.rename({0:'id', 1:'state'}, axis=1)
 
-state_averages_df = state_averages_df.merge(id_with_states, on='state')
+# state_averages_df = state_averages_df.merge(id_with_states, on='state')
 # By convention, positive margins indicate Dem advantage, while negative margins indicate Rep advantage.
 state_averages_df['Margin'] = state_averages_df['DEM'] - state_averages_df['REP']
 

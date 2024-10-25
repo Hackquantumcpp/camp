@@ -5,7 +5,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 import scipy
 import datetime
-import re
+import warnings
+import json
+
+warnings.filterwarnings('ignore')
 
 banned_pollsters = pd.read_csv('data/other/banned_pollsters.csv')['banned_pollsters']
 
@@ -99,6 +102,68 @@ state_avgs_df['margin_for_choropleth'] = state_avgs_df['Margin'].map(lambda x: m
 states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_College_Votes'], axis=1)
 state_avgs_df = state_avgs_df.merge(states_abb, left_on='state', right_on='Full_State')
 
+# Puerto Rico
+
+def pr_avg_pipeline(senate_data: pd.DataFrame, state: str):
+    state_race = senate_data[senate_data['state'] == state]# [senate['party'].isin(['DEM', 'REP'])]
+    state_pivot = pd.pivot_table(data=state_race, values='pct', index=['poll_id', 'display_name', 'state', 'end_date',
+                                                               'population', 'numeric_grade'], columns=['party_with_cand'],
+                                                              aggfunc='last', fill_value=0).reset_index()
+    state_pivot = pipeline(state_pivot)
+
+    ## Looser weights until/unless more polls come
+    
+    # Sample size weights
+    # total_sample_size = np.sum(state_pivot['sample_size'])
+    # state_pivot['sample_size_weights'] = state_pivot['sample_size'].map(lambda x: np.sqrt(min(x, 5000))) / np.sqrt(np.median(state_pivot['sample_size'].map(lambda x: min(x, 5000))))
+    # state_pivot['sample_size_weights'] /= np.sum(state_pivot['sample_size_weights'])
+    
+    # Time weights
+    # Variation of the equation used here: https://polls.votehub.us/
+    latest_date = datetime.datetime.today()
+    delta = (latest_date - state_pivot['end_date']).apply(lambda x: x.days)
+    timerange = (latest_date - state_pivot['end_date'].min()).days
+    state_pivot['time_weights'] = (0.4 * (1 - delta/(timerange + 1)) + 
+                                  0.6 *(0.3**(delta/(timerange + 1))))
+    # state_pivot['time_weights'] /= np.sum(state_pivot['time_weights'])
+    
+    # Quality weights
+    min_quality = 1.9
+    rel_quality = state_pivot['numeric_grade'] - min_quality
+    def quality_weight(rel_qual):
+        if rel_qual < -0.2:
+            return 0.01
+        elif rel_qual < 0:
+            return 0.02
+        return (0.05 + (0.95/(3-min_quality)) * rel_qual)
+    state_pivot['quality_weights'] = rel_quality.map(quality_weight)
+    # state_pivot['quality_weights'] /= np.sum(state_pivot['quality_weights'])
+
+    # Population weights
+    def population_weight(population):
+        if population == 'a':
+            return 0.6
+        elif population == 'rv':
+            return 0.9
+        return 1
+    state_pivot['population_weights'] = state_pivot['population'].map(population_weight)
+    # state_pivot['population_weights'] /= np.sum(state_pivot['population_weights'])
+    
+    # Gather the weights together
+    state_pivot['total_weights'] = state_pivot['time_weights'] * state_pivot['quality_weights'] * state_pivot['population_weights'] # * state_pivot['sample_size_weights']
+    state_pivot['total_weights'] /= np.sum(state_pivot['total_weights']) # Normalization step
+    
+    return state_pivot
+
+puerto_rico_df = pr_avg_pipeline(governor_np, 'Puerto Rico')
+dalmau = np.sum(puerto_rico_df['total_weights'] * puerto_rico_df['Dalmau (PRI)'])
+gonzalez = np.sum(puerto_rico_df['total_weights'] * puerto_rico_df['González-Colón (NPP)'])
+jimenez = np.sum(puerto_rico_df['total_weights'] * puerto_rico_df['Jiménez (OTH)'])
+ortiz = np.sum(puerto_rico_df['total_weights'] * puerto_rico_df['Ortiz (PPD)'])
+puerto_rico_avgs = pd.DataFrame({'candidate': ['Dalmau (PIP)', 'González-Colón (PNP)', 'Ortiz (PPD)', 'Jiménez (PD)'], 'pct': [dalmau, gonzalez, ortiz, jimenez], 
+                                 'color':['green', 'blue', 'red', 'cyan']})
+puerto_rico_avgs = puerto_rico_avgs.sort_values(by='pct', ascending=True)
+
 # Plots
 
 fig_governor = px.choropleth(
@@ -134,4 +199,37 @@ fig_governor.update_layout(coloraxis_colorbar=dict(
     tickvals=[-20, -10, 0, 10, 20],
     ticktext=['>R+20', 'R+10', 'EVEN', 'D+10', '>D+20']
 ))
+
+fig_pr = px.bar(data_frame=puerto_rico_avgs, x='pct', y='candidate', color='color', hover_data={'color':False}, labels={'pct':'Vote %', 'candidate':'Candidate'})
+
+fig_pr.update_layout(
+    title='Puerto Rico Gubernatorial Election',
+    yaxis_title='Candidate',
+    template='plotly_dark',
+    showlegend=False
+)
+
+
+puerto_rico_map_df = puerto_rico_avgs.iloc[0, :].copy()
+puerto_rico_map_df['state'] = 'Puerto Rico'
+puerto_rico_map_df = pd.DataFrame(puerto_rico_map_df).T
+
+with open('data/other/puertorico.geojson', 'r') as file:
+    pr_map = json.load(file)
+
+fig_pr_map = px.choropleth(
+    data_frame=puerto_rico_map_df,
+    locations='state',
+    featureidkey='properties.id',
+    geojson=pr_map,
+    color='color',
+    hover_name='state',
+    hover_data={'color':False},
+    labels={'candidate':'Winner'},
+)
+
+fig_pr_map.update_geos(fitbounds='locations', visible=False)
+
+fig_pr_map.update_layout(template='plotly_dark')
+
 
