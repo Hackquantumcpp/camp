@@ -25,7 +25,7 @@ election_day = datetime.date(2024, 11, 5)
 today = datetime.date.today()
 days_left = (election_day - today).days
 
-expected_polling_shift = polls_movement_df[polls_movement_df['days_before_nov5'] == days_left]['movement']
+expected_polling_shift = polls_movement_df[polls_movement_df['days_before_nov5'] == days_left]['movement'].values[0]
 expected_polling_error = 4 + expected_polling_shift
 weights = state_readable_with_id['Weight in State Polling Average'].to_numpy()
 
@@ -77,7 +77,9 @@ def margins_for_unpolled_states(state_list):
 
 def all_state_polled_margins():
     unpolled = margins_for_unpolled_states(full_state_list)
-    df = pd.concat([states_with_std_all, unpolled], axis=0)
+    polled_states = states_with_std_all.copy()
+    polled_states['margin_std'] = polled_states['margin_std'].map(lambda x: x + expected_polling_error)
+    df = pd.concat([polled_states, unpolled], axis=0) 
     
     # Convention: positive = Harris advantage, negative = Trump advantage
     # df['margin'] = df['Kamala Harris'] - df['Donald Trump']

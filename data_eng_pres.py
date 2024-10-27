@@ -262,7 +262,10 @@ def get_state_averages_with_stdev(state_list):
         dem_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Kamala Harris'] - dem_avg)**2)
         rep_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Donald Trump'] - rep_avg)**2)
         avg_margin = np.sum(pipelined_df['Kamala Harris'] * pipelined_df['total_weights'] - pipelined_df['Donald Trump'] * pipelined_df['total_weights'])
-        margin_std = np.sum(pipelined_df['total_weights'] * (pipelined_df['Kamala Harris'] - pipelined_df['Donald Trump'] - avg_margin)**2)
+        N = pipelined_df['Kamala Harris'].values.shape[0]
+        margin_std = np.sqrt(np.sum(pipelined_df['total_weights'] * (pipelined_df['Kamala Harris'] - pipelined_df['Donald Trump'] - avg_margin)**2)) * 1/(N-1)
+        if N == 1:
+            margin_std = 0
         dem_avgs.append(dem_avg)
         rep_avgs.append(rep_avg)
         dem_stdevs.append(dem_std)
