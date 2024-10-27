@@ -425,7 +425,7 @@ app.layout = html.Div(
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
             ),
             dcc.Dropdown(
-                options=['All', 'North Carolina', 'New Hampshire', 'Washington', 'Missouri'],
+                options=['All', 'North Carolina', 'New Hampshire', 'Washington', 'Indiana'],
                 value='All',
                 id='governor-state-filter',
                 # inline=True,
@@ -505,7 +505,8 @@ def state_timeseries_fetch(hoverData):
         xaxis_title='Date',
         yaxis_title='Polled Vote %',
         template='plotly_dark',
-        hovermode='x unified'
+        hovermode='x unified',
+        showlegend=False
     )
     return fig
 
@@ -527,7 +528,8 @@ def senate_timeseries_fetch(hoverData):
         xaxis_title='Date',
         yaxis_title='Polled Vote %',
         template='plotly_dark',
-        hovermode='x unified'
+        hovermode='x unified',
+        showlegend=False
     )
     return fig
 

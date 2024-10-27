@@ -816,7 +816,7 @@ harris_ev_sims = all_sims_ev()
 sims_df = pd.DataFrame(harris_ev_sims).rename({0:'ev'}, axis=1)
 sims_df['winner'] = sims_df['ev'].map(lambda x: 'Harris win' if x > 269 else 'Trump win')
 sims_df = sims_df.sort_values(['winner'], ascending=True)
-fig_sims = px.histogram(data_frame=sims_df, x='ev', color='winner', labels={'ev':'EV Bin', 'count':'Sim Count'})
+fig_sims = px.histogram(data_frame=sims_df, x='ev', nbins=int(np.max(harris_ev_sims) - np.min(harris_ev_sims)), color='winner', labels={'ev':'EV', 'count':'Sim Count'})
 fig_sims.add_vline(x=270, line_dash='dot', annotation_text='Winning Threshold', annotation_position='top right')
 fig_sims.update_layout(
     title_text='SnoutCount Combined Model Simulations (N=10,001)',
