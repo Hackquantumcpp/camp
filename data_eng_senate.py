@@ -222,7 +222,7 @@ def all_polls_with_weights_ind(senate_data):
         if state == 'Nebraska':
             ne_regular = pipelined_df.drop(['Ricketts (REP)', 'Love (DEM)'], axis=1).rename({'Osborn (IND)':'DEM', 'Fischer (REP)':'REP'}, axis=1)
             ne_special = pipelined_df.drop(['Osborn (IND)', 'Fischer (REP)'], axis=1).rename({'Ricketts (REP)':'REP', 'Love (DEM)':'DEM'}, axis=1)
-            ne_special.loc[0, 'state'] = 'Nebraska special'
+            ne_special.loc[:, 'state'] = 'Nebraska special'
             pipelined_df = pd.concat([ne_special, ne_regular], axis=0)
             polls_df = pd.concat([polls_df, pipelined_df], axis=0)
             continue
