@@ -239,7 +239,7 @@ app.layout = html.Div(
                                 style={'width':'50%', 'display':'inline-block'}
                             ),
                             dcc.Graph(
-                                id='maine-districcts',
+                                id='maine-districts',
                                 figure=scm.fig_projection_me_districts,
                                 style={'width':'50%', 'display':'inline-block'}
                             )
@@ -323,6 +323,18 @@ app.layout = html.Div(
                 figure=de.fig_states,
                 style={'justify':'center', 'width':'auto'},
             ),
+            html.Div([
+                dcc.Graph(
+                    id='nebraska-districts-polling',
+                    figure=de.fig_ne_districts,
+                    style={'width':'50%', 'display':'inline-block'}
+                ),
+                dcc.Graph(
+                    id='maine-districts-polling',
+                    figure=de.fig_me_districts,
+                    style={'width':'50%', 'display':'inline-block'}
+                )
+            ]),
             html.Div([
                 dcc.Graph(
                     id='competitive-state-polling',

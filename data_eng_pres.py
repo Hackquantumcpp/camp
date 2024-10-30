@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 import scipy
 import datetime
 import warnings
+import json
+from geojson_rewind import rewind
 # from dash_bootstrap_templates import load_figure_template
 
 warnings.filterwarnings('ignore')
@@ -297,8 +299,10 @@ states_ec = pd.read_csv('data/other/electoral-votes-by-state-2024.csv')
 states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_College_Votes'], axis=1)
 
 
+states_with_districts = states.copy()
 states = states.reset_index().merge(states_ec, on='state').merge(states_abb, left_on='state', right_on='Full_State')
 states['margin_for_choropleth'] = states['Margin'].map(lambda x: min(x, 20))
+states_with_districts['margin_for_choropleth'] = states_with_districts['Margin'].map(lambda x: min(x, 20))
 
 def choose_border_color(state):
     if state in ['Wisconsin', 'Pennsylvania', 'Nevada', 'Arizona', 'Michigan', 'North Carolina', 'Georgia']:
@@ -312,6 +316,9 @@ def choose_border_width(state):
 
 states['border_color'] = states['state'].map(choose_border_color)
 states['border_width'] = states['state'].map(choose_border_width)
+
+states_with_districts['border_color'] = states_with_districts['state'].map(choose_border_color)
+states_with_districts['border_width'] = states_with_districts['state'].map(choose_border_width)
 
 polls_with_weights = all_state_polls_with_weights(states_preproc[states_preproc['state'] != 'National']['state'].values)
 weights = polls_with_weights[['poll_id', 'total_weights']]
@@ -578,6 +585,57 @@ fig_states.update_layout(coloraxis_colorbar=dict(
     ticktext=['>R+20', 'R+10', 'EVEN', 'D+10', '>D+20']
 ))
 states = states.rename({'Margin':'Average Polling Margin'}, axis=1)
+
+with open('data/other/nebraska_cds.geojson') as file:
+    ne_dists = json.load(file)
+
+with open('data/other/maine_cds.geojson') as file:
+    me_dists = json.load(file)
+
+ne_dists = rewind(ne_dists, rfc7946=False)
+me_dists = rewind(me_dists, rfc7946=False)
+
+fig_ne_districts = px.choropleth(data_frame=states_with_districts.reset_index(), locations='state', featureidkey='properties.id', 
+                           color='margin_for_choropleth', geojson=ne_dists, projection='mercator',
+                          color_continuous_scale='RdBu', range_color=[-20, 20], hover_name='state', 
+                          hover_data={'state':False, 'Rating':True, 'Margin':False, 'Label':True, 
+                                      'margin_for_choropleth':False, 'border_color':False},
+                          labels={'Label':'Average Margin'}, height=500)
+
+fig_ne_districts.update_traces(
+    marker_line_color='black'
+)
+
+fig_ne_districts.update_layout(
+    template='plotly_dark',
+    margin={"r":0,"t":0,"l":0,"b":0}
+)
+
+fig_ne_districts.update_geos(fitbounds='locations', visible=False)
+
+fig_ne_districts.update_coloraxes(showscale=False)
+
+fig_me_districts = px.choropleth(data_frame=states_with_districts.reset_index(), locations='state', featureidkey='properties.id', 
+                           color='margin_for_choropleth', geojson=me_dists, projection='mercator',
+                          color_continuous_scale='RdBu', range_color=[-20, 20], hover_name='state', 
+                          hover_data={'state':False, 'Rating':True, 'Margin':False, 'Label':True, 
+                                      'margin_for_choropleth':False, 'border_color':False},
+                          labels={'Label':'Average Margin'}, height=500)
+
+fig_me_districts.update_traces(
+    marker_line_color='black'
+)
+
+fig_me_districts.update_layout(
+    template='plotly_dark',
+    margin={"r":0,"t":0,"l":0,"b":0}
+)
+
+fig_me_districts.update_geos(fitbounds='locations', visible=False)
+
+fig_me_districts.update_coloraxes(showscale=False)
+
+states_with_districts = states_with_districts.rename({'Margin':'Average Polling Margin'}, axis=1)
 
 fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='Leader', custom_data=['state'])
 
