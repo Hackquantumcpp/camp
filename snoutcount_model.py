@@ -526,6 +526,11 @@ harris_ev_win_chance, trump_ev_win_chance, tie_chance = total_chance['harris'], 
 
 projection = pd.concat([projected_margins, state_chances], axis=1)
 
+projection_with_evs = pd.concat([projection, states_ec.set_index(['state'])], axis=1)
+
+harris_expected_evs = (projection_with_evs['chance'] * projection_with_evs['ElectoralVotes']).sum()
+trump_expected_evs = 538 - harris_expected_evs
+
 
 def winner(chance):
     # Dealing with Harris chances
@@ -815,8 +820,9 @@ fig_projection_margins.update_traces(
 harris_ev_sims = all_sims_ev()
 sims_df = pd.DataFrame(harris_ev_sims).rename({0:'ev'}, axis=1)
 sims_df['winner'] = sims_df['ev'].map(lambda x: 'Harris win' if x > 269 else 'Trump win')
+unique_evs_num = sims_df['ev'].value_counts().values.shape[0]
 sims_df = sims_df.sort_values(['winner'], ascending=True)
-fig_sims = px.histogram(data_frame=sims_df, x='ev', nbins=int(np.max(harris_ev_sims) - np.min(harris_ev_sims)), color='winner', labels={'ev':'EV', 'count':'Sim Count'})
+fig_sims = px.histogram(data_frame=sims_df, x='ev', nbins=unique_evs_num, color='winner', labels={'ev':'EV', 'count':'Sim Count'})
 fig_sims.add_vline(x=270, line_dash='dot', annotation_text='Winning Threshold', annotation_position='top right')
 fig_sims.update_layout(
     title_text='SnoutCount Combined Model Simulations (N=10,001)',

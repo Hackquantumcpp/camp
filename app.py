@@ -47,6 +47,18 @@ projected_ev_card =dbc.Card(
     ), style={'width':'18rem'}, color=('primary' if scm.harris_projected_evs > scm.trump_projected_evs else 'danger'), outline=True
 )
 
+expected_ev_card =dbc.Card(
+    dbc.CardBody(
+        [
+            html.H6(children='Expected Electoral College', style={'textAlign':'center', 'font-family':'Lucida Console'}),
+            html.Div(children=f'Harris - {scm.harris_expected_evs:.2f}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#05c9fa'},
+                                id='harris-ev-expectation'),
+            html.Div(children=f'Trump - {scm.trump_expected_evs:.2f}', style={'textAlign':'center', 'font-family':'Lucida Console', 'color':'#ff4a3d'},
+                                id='trump-ev-expectation')
+        ]
+    ), style={'width':'18rem'}, color=('primary' if scm.harris_expected_evs > scm.trump_expected_evs else 'danger'), outline=True
+)
+
 tp_chances_card =dbc.Card(
     dbc.CardBody(
         [
@@ -161,7 +173,7 @@ app.layout = html.Div(
             #     interval=1*1000, # every second, for debug purposes
             #     n_intervals=0
             # ),
-            html.H4(children=f'Last updated: October 30, 2024 12:05 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.H4(children=f'Last updated: October 30, 2024 3:05 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
             # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
@@ -172,6 +184,7 @@ app.layout = html.Div(
                         [
                             dbc.Col(election_chances_card, width='auto'),
                             dbc.Col(projected_ev_card, width='auto'),
+                            dbc.Col(expected_ev_card, width='auto'),
                             dbc.Col(tp_chances_card, width='auto')
                         ], style={'justify-content':'center'}
                     ),
