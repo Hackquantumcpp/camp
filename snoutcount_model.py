@@ -11,6 +11,8 @@ from statsmodels.stats.moment_helpers import corr2cov
 import warnings
 import datetime
 from pathlib import Path
+import json
+from geojson_rewind import rewind
 
 from data_eng_pres import states_with_std_all, state_readable_with_id, polls, states_ec, nat_diff, harris_trump_data_interp, states_abb, margin_rating, margin_with_party, all_state_polls_with_weights
 from data_eng_pres import full_state_list as polled_states
@@ -480,7 +482,7 @@ fund_weights = pd.concat([fund_weights, unpolled_weights_f], axis=0).reset_index
 polls_ev_pred = ev_pred()
 fund_ev_pred, fund_preds, fund_samples = fundamentals_ev_pred()
 polls_samples = np.array(list(samples.values()))
-fund_margins = cpvi.set_index(['State'])['projected_margin']
+fund_margins = cpvi.sort_values(['State']).set_index(['State'])['projected_margin']
 
 fund_preds = pd.concat([fund_preds, fund_margins], axis=1).rename({'projected_margin':'margin'}, axis=1)
 
@@ -817,6 +819,81 @@ fig_projection_margins.update_layout(coloraxis_colorbar=dict(
 fig_projection_margins.update_traces(
     marker_line_color='black'
 )
+
+
+### DISTRICT LEVEL CHOROPLETHS (NEBRASKA & MAINE) ###
+with open('data/other/nebraska_cds.geojson') as file:
+    ne_dists = json.load(file)
+
+with open('data/other/maine_cds.geojson') as file:
+    me_dists = json.load(file)
+
+proj_for_choro = projection_for_choropleth.copy()
+
+ne_dists = rewind(ne_dists, rfc7946=False)
+me_dists = rewind(me_dists, rfc7946=False)
+
+projection_for_choropleth = projection.reset_index()
+projection_for_choropleth['rounded_chance'] = projection_for_choropleth['chance'].map(lambda x: np.round(x, decimals=3))
+projection_for_choropleth['trump_chance'] = 1 - projection_for_choropleth['rounded_chance']
+projection_for_choropleth['harris_chance_display'] = projection_for_choropleth['rounded_chance'].map(lambda x: f'{(x*100):.1f}%')
+projection_for_choropleth['trump_chance_display'] = projection_for_choropleth['trump_chance'].map(lambda x: f'{(x*100):.1f}%')
+projection_for_choropleth['Rating'] = projection_for_choropleth['chance'].map(chance_rating)
+projection_for_choropleth['Margin Label'] = projection_for_choropleth['margin'].map(margin_with_party)
+
+projection_for_choropleth = projection_for_choropleth.merge(polls_weights.reset_index(), left_on='index', right_on='state').drop(['state'], axis=1)
+projection_for_choropleth['Polling Influence'] = projection_for_choropleth['weights'].map(lambda x: f'{x*100:.1f}%')
+projection_for_choropleth['Fundamentals Influence'] = projection_for_choropleth['weights'].map(lambda x: f'{(1-x)*100:.1f}%')
+
+# print(projection_for_choropleth[projection_for_choropleth['index'].isin(['Nebraska CD-1', 'Nebraska CD-2', 'Nebraska CD-3'])].head())
+
+fig_projection_ne_districts = px.choropleth(data_frame=projection_for_choropleth, locations='index', featureidkey='properties.id',
+                          color='chance', geojson=ne_dists, projection='mercator',
+                          color_continuous_scale='RdBu', range_color=[0, 1], 
+                          hover_name='index', 
+                          hover_data={'index':False, 'chance':False, 'harris_chance_display':True, 'trump_chance_display':True, 'Rating':True, 'Margin Label':True, 'Polling Influence':True, 'Fundamentals Influence':True}, 
+                          labels={'harris_chance_display':'Harris Win Chance', 'trump_chance_display':'Trump Win Chance', 'Rating':'Rating', 'Margin Label':'Projected Margin'}, height=500)
+fig_projection_ne_districts.update_layout(
+    template='plotly_dark',
+    margin={"r":0,"t":0,"l":0,"b":0}
+)
+fig_projection_ne_districts.update_geos(fitbounds='locations', visible=False)
+
+# fig_projection_ne_districts.update_layout(coloraxis_colorbar=dict(
+#     title='Win Chance',
+#     tickvals=[0, 0.25, 0.5, 0.75, 1],
+#     ticktext=['Safe Trump', 'Likely Trump', 'Tossup', 'Likely Harris', 'Safe Harris']
+# ))
+
+fig_projection_ne_districts.update_traces(
+    marker_line_color='black'
+)
+
+fig_projection_ne_districts.update_coloraxes(showscale=False)
+
+fig_projection_me_districts = px.choropleth(data_frame=projection_for_choropleth, locations='index', featureidkey='properties.id',
+                          color='chance', geojson=me_dists, projection='mercator',
+                          color_continuous_scale='RdBu', range_color=[0, 1], 
+                          hover_name='index', 
+                          hover_data={'index':False, 'chance':False, 'harris_chance_display':True, 'trump_chance_display':True, 'Rating':True, 'Margin Label':True, 'Polling Influence':True, 'Fundamentals Influence':True}, 
+                          labels={'harris_chance_display':'Harris Win Chance', 'trump_chance_display':'Trump Win Chance', 'Rating':'Rating', 'Margin Label':'Projected Margin'}, height=500)
+fig_projection_me_districts.update_layout(
+    template='plotly_dark',
+    margin={"r":0,"t":0,"l":0,"b":0}
+)
+fig_projection_me_districts.update_geos(fitbounds='locations', visible=False)
+
+# fig_projection_me_districts.update_layout(coloraxis_colorbar=dict(
+#     title='Win Chance',
+#     tickvals=[0, 0.25, 0.5, 0.75, 1],
+#     ticktext=['Safe Trump', 'Likely Trump', 'Tossup', 'Likely Harris', 'Safe Harris']
+# ))
+
+fig_projection_me_districts.update_traces(
+    marker_line_color='black'
+)
+
+fig_projection_me_districts.update_coloraxes(showscale=False)
 
 ### PROJECTION HISTOGRAM ###
 

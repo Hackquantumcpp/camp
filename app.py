@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 import numpy as np
 # import datetime
-
 # Import our data engineering, plot structuring, and model files
 import data_eng_pres as de
 import data_eng_senate as sen
@@ -232,6 +231,18 @@ app.layout = html.Div(
                         figure=scm.fig_projection,
                         style={'justify':'center', 'width':'auto'}
                     ),
+                    html.Div([
+                            dcc.Graph(
+                                id='nebraska-districts',
+                                figure=scm.fig_projection_ne_districts,
+                                style={'width':'50%', 'display':'inline-block'}
+                            ),
+                            dcc.Graph(
+                                id='maine-districcts',
+                                figure=scm.fig_projection_me_districts,
+                                style={'width':'50%', 'display':'inline-block'}
+                            )
+                    ]),
                     dcc.Graph(
                         id='sims-histogram',
                         figure=scm.fig_sims,
@@ -250,7 +261,7 @@ app.layout = html.Div(
                             id='polls-only',
                             figure=scm.fig_states_polling,
                             style={'justify':'center', 'width':'auto'}
-                        )
+                        ),
                     ], label='Polls-Only'),
                     dbc.Tab([html.Br(),
                         html.H4(children=f"{'Harris' if scm.fund_ev_pred['harris'] > scm.fund_ev_pred['trump'] else 'Trump'} is leading with a {max(scm.fund_ev_pred['harris'], scm.fund_ev_pred['trump']) * 100:.1f}% chance of winning the election in the SnoutCount fundamentals-only model.",
