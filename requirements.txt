@@ -35,6 +35,7 @@ feedparser==6.0.11
 filelock==3.16.0
 Flask==3.0.3
 fonttools==4.51.0
+geojson_rewind==1.1.0
 geopandas==1.0.1
 gunicorn==23.0.0
 h11==0.14.0
