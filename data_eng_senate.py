@@ -313,7 +313,7 @@ state_averages_df = state_averages_df.merge(states_abb, left_on='state', right_o
 
 # For overview cards
 generic_margin = dem_lowess[:, 1][-1] - rep_lowess[:, 1][-1]
-generic_margin_label = ('D' if generic_margin > 0 else 'R') + f'+{generic_margin:.2f}%'
+generic_margin_label = ('D' if generic_margin > 0 else 'R') + f'+{abs(generic_margin):.2f}%'
 
 winner = state_averages_df_all['Margin'].map(lambda x: 'DEM' if x > 0 else 'REP')
 state_averages_df_all['Winner'] = winner

@@ -4,13 +4,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 import numpy as np
-# import datetime
+
 # Import our data engineering, plot structuring, and model files
 import data_eng_pres as de
 import data_eng_senate as sen
 import data_eng_gub as gub
 from data_eng_state_pres_over_time import state_timeseries
 from data_eng_senate_seat_over_time import senate_timeseries
+from data_eng_state_gub_over_time import governor_timeseries
 import snoutcount_model as scm
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
@@ -443,6 +444,18 @@ app.layout = html.Div(
                 figure=gub.fig_pr,
                 style={'justify':'center', 'width':'auto'}
             ),
+            html.Div([
+                dcc.Graph(
+                    id='competitive-governor-polling',
+                    figure=gub.fig_comp,
+                    hoverData={'points': [{'y': 'North Carolina'}]},
+                    style={'width':'50%', 'display':'inline-block'}
+                ),
+                dcc.Graph(
+                    id='governor-timeseries',
+                    style={'width':'50%', 'display':'inline-block'}
+                )
+            ]),
             html.Br(),
             html.H4(
                 children='State Polls Utilized',
@@ -549,6 +562,29 @@ def senate_timeseries_fetch(hoverData):
     fig.update_traces(hovertemplate=None)
     fig.update_layout(
         title=f'{state} Senate Seat Polling Average',
+        xaxis_title='Date',
+        yaxis_title='Polled Vote %',
+        template='plotly_dark',
+        hovermode='x unified',
+        showlegend=False
+    )
+    return fig
+
+@callback(
+    Output(component_id='governor-timeseries', component_property='figure'),
+    Input(component_id='competitive-governor-polling', component_property='hoverData'),
+    # Input(component_id='state-timeseries-radio-items', component_property='value')
+)
+def governor_timeseries_fetch(hoverData):
+    state = hoverData['points'][0]['y'] # ['y']# [0]['customdata']
+    # print(state)
+    timeseries_df = governor_timeseries[state]
+    fig = px.line(data_frame=timeseries_df, x='Date', y=['DEM', 'REP'], title=state)
+    # fig_scatter = px.scatter(data_frame=de.state_readable[de.state_readable['Date'] >= pd.to_datetime('2024-07-24')][de.state_readable['State'] == state].set_index('Date'), y=['Kamala Harris', 'Donald Trump'], opacity=0.5)
+    # fig = go.Figure(data=fig_line.data)# + fig_scatter.data)
+    fig.update_traces(hovertemplate=None)
+    fig.update_layout(
+        title=f'{state} Gubernatorial Polling Average',
         xaxis_title='Date',
         yaxis_title='Polled Vote %',
         template='plotly_dark',

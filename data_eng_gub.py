@@ -102,6 +102,11 @@ state_avgs_df['margin_for_choropleth'] = state_avgs_df['Margin'].map(lambda x: m
 states_abb = pd.read_csv('data/other/Electoral_College.csv').drop(['Electoral_College_Votes'], axis=1)
 state_avgs_df = state_avgs_df.merge(states_abb, left_on='state', right_on='Full_State')
 
+competitive = state_avgs_df[state_avgs_df['state'].isin(['North Carolina', 'New Hampshire', 'Washington'])]
+competitive = competitive.sort_values(by=['Margin'], ascending=False)
+leader = lambda x: 'Republicans' if x < 0 else 'Democrats'
+competitive['Leader'] = competitive['Margin'].map(leader)
+
 # Puerto Rico
 
 def pr_avg_pipeline(senate_data: pd.DataFrame, state: str):
@@ -232,4 +237,11 @@ fig_pr_map.update_geos(fitbounds='locations', visible=False)
 
 fig_pr_map.update_layout(template='plotly_dark')
 
+fig_comp = px.bar(data_frame=competitive, x='Margin', y='state', color='Leader', custom_data=['state'])
+
+fig_comp.update_layout(
+    title='Margins in Competitive Gubernatorial Races',
+    yaxis_title='State',
+    template='plotly_dark'
+)
 
