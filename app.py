@@ -252,7 +252,7 @@ app.layout = html.Div(
                     html.Div(dbc.Table.from_dataframe(
                         pd.DataFrame(scm.tp_freq_display).reset_index().rename({'count':'Tipping Point Probability', 'index':'Most Frequent Tipping Point States'}, axis=1), striped=True, bordered=True, hover=True, responsive=True,
                         style={'font-family':'monospace', 'width':'49%', 'margin':'auto'}
-                    )),], label='Combined'),
+                    )),], label='Combined', tab_style={'margin-left':'auto', 'margin-right':'auto'}, label_style={'font-family':'Lucida Console'}),
                     dbc.Tab([
                         html.Br(),
                         html.H4(children=f"{'Harris' if scm.polls_ev_pred['harris'] > scm.polls_ev_pred['trump'] else 'Trump'} is leading with a {max(scm.polls_ev_pred['harris'], scm.polls_ev_pred['trump']) * 100:.1f}% chance of winning the election in the SnoutCount polls-only model.",
@@ -263,7 +263,7 @@ app.layout = html.Div(
                             figure=scm.fig_states_polling,
                             style={'justify':'center', 'width':'auto'}
                         ),
-                    ], label='Polls-Only'),
+                    ], label='Polls-Only', tab_style={'margin-left':'auto', 'margin-right':'auto'}, label_style={'font-family':'Lucida Console'}),
                     dbc.Tab([html.Br(),
                         html.H4(children=f"{'Harris' if scm.fund_ev_pred['harris'] > scm.fund_ev_pred['trump'] else 'Trump'} is leading with a {max(scm.fund_ev_pred['harris'], scm.fund_ev_pred['trump']) * 100:.1f}% chance of winning the election in the SnoutCount fundamentals-only model.",
                             style={'textAlign':'center', 'font-family':'Lucida Console', 'color':('#05c9fa' if scm.fund_ev_pred['harris'] > scm.fund_ev_pred['trump'] else '#ff4a3d')}),
@@ -273,7 +273,7 @@ app.layout = html.Div(
                             id='fundamentals-only',
                             figure=scm.fig_states_fund,
                             style={'justify':'center', 'width':'auto'}
-                        )], label='Fundamentals-Only'
+                        )], label='Fundamentals-Only', tab_style={'margin-left':'auto', 'margin-right':'auto'}, label_style={'font-family':'Lucida Console'}
                     ),
                     dbc.Tab([html.Br(),
                         html.H4(children=f"Press the button to simulate the election with the SnoutCount combined fundamentals+polls model.",
@@ -291,7 +291,7 @@ app.layout = html.Div(
                         dcc.Graph(
                             id='simulation',
                             style={'justify':'center', 'width':'auto'}
-                        )], label='Simulate The Election'
+                        )], label='Simulate The Election', tab_style={'margin-left':'auto', 'margin-right':'auto'}, label_style={'font-family':'Lucida Console'}
                     ),
                     
                 ]
