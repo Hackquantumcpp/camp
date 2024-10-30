@@ -11,9 +11,11 @@ white_evangel = pd.read_csv('data/fundamentals/white_evangel_pct.csv')
 
 acs_age = pd.read_csv('data/fundamentals/ACS_data.csv')
 acs_age = acs_age.T.set_index([0]).T
-
 median_ages = acs_age[['Geographic Area Name', 'Estimate!!Total!!Total population!!SUMMARY INDICATORS!!Median age (years)']]
 median_ages = median_ages.rename({'Geographic Area Name':'state', 'Estimate!!Total!!Total population!!SUMMARY INDICATORS!!Median age (years)':'median_age'}, axis=1)
+cd_median_ages = pd.read_csv('data/fundamentals/cd_median_ages.csv')
+median_ages = pd.concat([median_ages, cd_median_ages], axis=0)
+
 
 regions = pd.read_csv('data/fundamentals/regions_538.csv')
 

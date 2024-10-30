@@ -29,8 +29,8 @@ expected_polling_shift = polls_movement_df[polls_movement_df['days_before_nov5']
 expected_polling_error = 4 + expected_polling_shift
 weights = state_readable_with_id['Weight in State Polling Average'].to_numpy()
 
-states_ec_dict = states_ec.set_index('state').to_dict('index')
-state_list = states_ec['state'].to_numpy()
+states_ec_dict = states_ec.sort_values(['state']).set_index('state').to_dict('index')
+state_list = states_ec.sort_values(['state'])['state'].to_numpy()
 full_state_list = state_list[state_list != 'United States']
 
 def chance_for_state(state: str):
@@ -172,7 +172,8 @@ def adjust_margins(k=10000, method='cholesky', return_chances=False, return_samp
     """
     # Get state margins
     margins_df = all_state_polled_margins()
-    margins_df = margins_df[~margins_df['state'].isin(['Maine CD-1', 'Maine CD-2', 'Nebraska CD-1', 'Nebraska CD-2', 'Nebraska CD-3'])]
+    # margins_df = margins_df[~margins_df['state'].isin(['Maine CD-1', 'Maine CD-2', 'Nebraska CD-1', 'Nebraska CD-2', 'Nebraska CD-3'])]
+    margins_df = margins_df.sort_values(['state'])
     margins = margins_df['margin'].values
     margin_stdevs = margins_df['margin_std'].values
     
@@ -256,9 +257,9 @@ def adjust_margins(k=10000, method='cholesky', return_chances=False, return_samp
     return adjusted_margins
 
 chances_df, samples = adjust_margins(return_chances=True, return_samples=True)
-cd_chances, cd_samples = simple_chances(return_samples=True)
-chances_df = pd.concat([chances_df, simple_chances()], axis=0)
-samples.update(cd_samples)
+# cd_chances, cd_samples = simple_chances(return_samples=True)
+# chances_df = pd.concat([chances_df, simple_chances()], axis=0)
+# samples.update(cd_samples)
 
 def ev_pred():
     """
@@ -381,11 +382,11 @@ def fundamentals_ev_pred():
     trump_ec = np.zeros(10001)
     # state_chances = {}
     state_chances = pd.DataFrame(columns=['chance'], index=['state'])
-    harris = cpvi[~cpvi['State'].str.contains('CD')]['projected_harris_pct'].values
-    trump = cpvi[~cpvi['State'].str.contains('CD')]['projected_trump_pct'].values
+    harris = cpvi.sort_values(['State'])['projected_harris_pct'].values
+    trump = cpvi.sort_values(['State'])['projected_trump_pct'].values
     div_factor = 4
-    cov_matrix_h = nearest_positive_definite(corr2cov(corr_matrix, np.full(fill_value=pred_harris_stdev / div_factor, shape=51)))
-    cov_matrix_t = nearest_positive_definite(corr2cov(corr_matrix, np.full(fill_value=pred_trump_stdev / div_factor, shape=51)))
+    cov_matrix_h = nearest_positive_definite(corr2cov(corr_matrix, np.full(fill_value=pred_harris_stdev / div_factor, shape=56)))
+    cov_matrix_t = nearest_positive_definite(corr2cov(corr_matrix, np.full(fill_value=pred_trump_stdev / div_factor, shape=56)))
     harris_dist = scipy.stats.multivariate_normal.rvs(harris, cov=cov_matrix_h, size=10001)
     trump_dist = scipy.stats.multivariate_normal.rvs(trump, cov=cov_matrix_t, size=10001)
     # print('DEBUG:', harris_dist, trump_dist)
@@ -540,6 +541,8 @@ proj_ev = projection.copy()
 proj_ev['winner'] = proj_ev['chance'].map(winner)
 proj_ev = proj_ev.merge(states_ec, left_on=proj_ev.index, right_on='state')
 
+# print(projection, harris_ev_win_chance, harris_expected_evs)
+
 ####################
 ####################
 
@@ -641,14 +644,14 @@ def chance_rating(chance):
 
 ###### POLLING PROJECTIONS #######
 
-chances_for_choropleth = chances_df.reset_index().merge(states_abb, left_on='index', right_on='Full_State').drop(['Full_State'], axis=1)
+chances_for_choropleth = chances_df.reset_index().merge(states_abb, left_on='state', right_on='Full_State').drop(['Full_State'], axis=1)
 chances_for_choropleth['trump_chance'] = 1 - chances_for_choropleth['chance']
 chances_for_choropleth['Rating'] = chances_for_choropleth['chance'].map(chance_rating)
 chances_for_choropleth['harris_chance_display'] = chances_for_choropleth['chance'].map(lambda x: f'{(x*100):.1f}%')
 chances_for_choropleth['trump_chance_display'] = chances_for_choropleth['trump_chance'].map(lambda x: f'{(x*100):.1f}%')
 fig_states_polling = px.choropleth(data_frame=chances_for_choropleth, locations='Abb_State', locationmode='USA-states', 
                            color='chance',
-                          color_continuous_scale='RdBu', range_color=[0, 1], hover_name='index', 
+                          color_continuous_scale='RdBu', range_color=[0, 1], hover_name='state', 
                           hover_data={'Abb_State':False, 'chance':False, 'harris_chance_display':True, 'trump_chance_display':True, 'Rating':True}, 
                           labels={'harris_chance_display':'Harris Win Chance', 'trump_chance_display':'Trump Win Chance'}, height=1000)
 fig_states_polling.update_layout(
@@ -669,13 +672,13 @@ fig_states_polling.update_traces(
 
 ##
 
-margins_for_choropleth = chances_df.reset_index().merge(states_abb, left_on='index', right_on='Full_State').drop(['Full_State'], axis=1)
+margins_for_choropleth = chances_df.reset_index().merge(states_abb, left_on='state', right_on='Full_State').drop(['Full_State'], axis=1)
 margins_for_choropleth['margin_for_choropleth'] = margins_for_choropleth['margin'].map(lambda x: max(-15, min(x, 15)))
 margins_for_choropleth['Rating'] = margins_for_choropleth['margin'].map(margin_rating)
 margins_for_choropleth['Label'] = margins_for_choropleth['margin'].map(margin_with_party)
 fig_states_polling_margins = px.choropleth(data_frame=margins_for_choropleth, locations='Abb_State', locationmode='USA-states', 
                           color='margin_for_choropleth',
-                          color_continuous_scale='RdBu', range_color=[-15, 15], hover_name='index', 
+                          color_continuous_scale='RdBu', range_color=[-15, 15], hover_name='state', 
                           hover_data={'Abb_State':False, 'margin_for_choropleth':False, 'margin':False, 'Label':True, 'Rating':True},
                           labels={'Label':'Projected Margin'}, 
                           height=1000)
@@ -817,7 +820,7 @@ fig_projection_margins.update_traces(
 
 ### PROJECTION HISTOGRAM ###
 
-harris_ev_sims = all_sims_ev()
+harris_ev_sims = np.array(all_sims_ev())
 sims_df = pd.DataFrame(harris_ev_sims).rename({0:'ev'}, axis=1)
 sims_df['winner'] = sims_df['ev'].map(lambda x: 'Harris win' if x > 269 else 'Trump win')
 unique_evs_num = sims_df['ev'].value_counts().values.shape[0]
