@@ -168,13 +168,12 @@ app.layout = html.Div(
                 children='Centralized Aggregate and Model of Polls (CAMP)',
                 style={'textAlign':'center', 'font-family':'Lucida Console'}
             ),
-            # dcc.Interval(
-            #     id='interval-component',
-            #     interval=1*1000, # every second, for debug purposes
-            #     n_intervals=0
-            # ),
-            html.H4(children=f'Last updated: November 3, 2024 9:10 PM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
-            # html.H4(children=f'Debug: {str(datetime.datetime.now())}', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='debug-last-updated'),
+            html.H4(children=f'Last updated: November 5, 2024 2:00 AM UTC', style={'textAlign':'center', 'font-family':'Lucida Console'}, id='last-updated'),
+            html.Hr(),
+            html.H2(
+                children='FINAL FORECAST + POLLS',
+                style={'textAlign':'center', 'font-family':'Lucida Console'}
+            ),
             html.Hr(),
             html.H2(children='Overview', style={'textAlign':'center', 'font-family':'Lucida Console'}),
             html.Br(),
@@ -249,10 +248,22 @@ app.layout = html.Div(
                         figure=scm.fig_sims,
                         style={'justify':'center', 'width':'auto'}
                     ),
-                    html.Div(dbc.Table.from_dataframe(
-                        pd.DataFrame(scm.tp_freq_display).reset_index().rename({'count':'Tipping Point Probability', 'index':'Most Frequent Tipping Point States'}, axis=1), striped=True, bordered=True, hover=True, responsive=True,
-                        style={'font-family':'monospace', 'width':'49%', 'margin':'auto'}
-                    )),], label='Combined', tab_style={'margin-left':'auto', 'margin-right':'auto'}, label_style={'font-family':'Lucida Console'}),
+                    html.Div([
+                        dbc.Table.from_dataframe(
+                            pd.DataFrame(scm.tp_freq_display).reset_index().rename({'count':'Tipping Point Probability', 'index':'Most Frequent Tipping Point States'}, axis=1), striped=True, bordered=True, hover=True, responsive=True,
+                            style={'font-family':'monospace', 'width':'50%', 'margin':'auto'}
+                        ),
+                    ]),
+                    html.Br(),
+                    html.Div(
+                        [
+                            html.H6('Additional Probabilities', style={'font-family':'Lucida Console', 'textAlign':'center'}),
+                            html.P(f'Harris wins in a landslide (at least 350 EVs): {scm.harris_landslide_chance * 100:.2f}%', style={'font-family':'Lucida Console', 'textAlign':'center'}),
+                            html.P(f'Trump wins in a landslide (at least 350 EVs): {scm.trump_landslide_chance * 100:.2f}%', style={'font-family':'Lucida Console', 'textAlign':'center'}),
+                            html.P(f'Harris wins a state that Trump won in 2020: {scm.harris_flip_chance * 100:.2f}%', style={'font-family':'Lucida Console', 'textAlign':'center'}),
+                            html.P(f'Trump wins a state that Biden won in 2020: {scm.trump_flip_chance * 100:.2f}%', style={'font-family':'Lucida Console', 'textAlign':'center'})
+                    ], style={'width':'50%', 'margin':'auto'}
+                    )], label='Combined', tab_style={'margin-left':'auto', 'margin-right':'auto'}, label_style={'font-family':'Lucida Console'}),
                     dbc.Tab([
                         html.Br(),
                         html.H4(children=f"{'Harris' if scm.polls_ev_pred['harris'] > scm.polls_ev_pred['trump'] else 'Trump'} is leading with a {max(scm.polls_ev_pred['harris'], scm.polls_ev_pred['trump']) * 100:.1f}% chance of winning the election in the SnoutCount polls-only model.",

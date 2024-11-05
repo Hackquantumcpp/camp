@@ -13,6 +13,7 @@ import datetime
 from pathlib import Path
 import json
 from geojson_rewind import rewind
+from operator import itemgetter
 
 from data_eng_pres import states_with_std_all, state_readable_with_id, polls, states_ec, nat_diff, harris_trump_data_interp, states_abb, margin_rating, margin_with_party, all_state_polls_with_weights
 from data_eng_pres import full_state_list as polled_states
@@ -391,19 +392,12 @@ def fundamentals_ev_pred():
     cov_matrix_t = nearest_positive_definite(corr2cov(corr_matrix, np.full(fill_value=pred_trump_stdev / div_factor, shape=56)))
     harris_dist = scipy.stats.multivariate_normal.rvs(harris, cov=cov_matrix_h, size=10001)
     trump_dist = scipy.stats.multivariate_normal.rvs(trump, cov=cov_matrix_t, size=10001)
-    # print('DEBUG:', harris_dist, trump_dist)
     margin_dist = harris_dist - trump_dist
-    # print('DEBUG: margin_dist before concat', margin_dist)
     cd_margins = np.array(list(fundamentals_pred(['Nebraska CD-1', 'Nebraska CD-2', 'Nebraska CD-3', 'Maine CD-1', 'Maine CD-2'], return_samples=True).values()))
-    # print('shapes: cd', cd_margins.shape, 'margin_dist', margin_dist.shape)
-    # print('DEBUG: cd margins', cd_margins)
     margin_dist = np.append(np.transpose(margin_dist), cd_margins, axis=0)
     winner_dict = {}
-    # print('DEBUG: margin_dist after concat', margin_dist)
-    # print('DEBUG: margin_dist shape after concat', margin_dist.shape)
     for state, margins in zip(full_state_list, margin_dist):
         winner_dict[state] = margins
-    # print(winner_dict)
     def harris_winner(margin):
         return 1 if margin > 0 else 0
     def trump_winner(margin):
@@ -475,10 +469,6 @@ unpolled_weights_p, unpolled_weights_f = unpolled_weights_p.set_index(['state'])
 polls_weights = pd.concat([polls_weights, unpolled_weights_p], axis=0).reset_index().sort_values('state').set_index(['state'])
 fund_weights = pd.concat([fund_weights, unpolled_weights_f], axis=0).reset_index().sort_values('state').set_index(['state'])
 
-# print(polls_weights) ## DEBUG
-
-# print(polls_weights, fund_weights) ## DEBUG
-
 polls_ev_pred = ev_pred()
 fund_ev_pred, fund_preds, fund_samples = fundamentals_ev_pred()
 polls_samples = np.array(list(samples.values()))
@@ -493,7 +483,9 @@ def combine_models(polls, fundamentals):
     indices_fund = np.random.choice(10001, 10001, replace=True)
     polls_samp = polls[:, indices_polls]
     fund_samp = fundamentals[:, indices_fund]
+
     winner_dict_polls, winner_dict_fund, winner_dict = {}, {}, {}
+
     for state, margins in zip(full_state_list, polls_samp):
         winner_dict_polls[state] = margins
     for state, margins in zip(full_state_list, fund_samp):
@@ -501,10 +493,12 @@ def combine_models(polls, fundamentals):
         winner_dict[state] = polls_weights.loc[state].values[0] * winner_dict_polls[state] + fund_weights.loc[state].values[0] * winner_dict_fund[state]
     state_margins = pd.DataFrame(columns=['margin'], index=['state'])
     state_chances = pd.DataFrame(columns=['chance'], index=['state'])
+
     def harris_winner(margin):
         return 1 if margin > 0 else 0
     def trump_winner(margin):
         return 0 if margin > 0 else 1
+    
     for state in full_state_list:
         state_ec = states_ec_dict[state]['ElectoralVotes']
         chance = np.mean(winner_dict[state] > 0)
@@ -578,7 +572,6 @@ def find_tipping_point(one_sim: pd.Series):
     def winner(margin):
         # 1 = Harris, 0 = Trump
         return 1 if margin > 0 else 0
-    # print('DEBUG:', one_sim)
     states_ec_dict_nonat = states_ec_dict.copy()
     states_ec_dict_nonat.pop('United States')
     harris_winning = np.sum(np.vectorize(winner)(one_sim) * np.vectorize(lambda x: x['ElectoralVotes'])(np.array(list(states_ec_dict_nonat.values()))))
@@ -845,8 +838,6 @@ projection_for_choropleth = projection_for_choropleth.merge(polls_weights.reset_
 projection_for_choropleth['Polling Influence'] = projection_for_choropleth['weights'].map(lambda x: f'{x*100:.1f}%')
 projection_for_choropleth['Fundamentals Influence'] = projection_for_choropleth['weights'].map(lambda x: f'{(1-x)*100:.1f}%')
 
-# print(projection_for_choropleth[projection_for_choropleth['index'].isin(['Nebraska CD-1', 'Nebraska CD-2', 'Nebraska CD-3'])].head())
-
 fig_projection_ne_districts = px.choropleth(data_frame=projection_for_choropleth, locations='index', featureidkey='properties.id',
                           color='chance', geojson=ne_dists, projection='mercator',
                           color_continuous_scale='RdBu', range_color=[0, 1], 
@@ -915,3 +906,41 @@ fig_sims.update_layout(
 ########
 harris_projected_evs = np.median(harris_ev_sims)
 trump_projected_evs = 538 - harris_projected_evs
+
+harris_landslide_chance = np.mean(harris_ev_sims >= 350)
+trump_landslide_chance = np.mean(harris_ev_sims <= 188)
+
+cpvi_sorted = cpvi.sort_values(by=['State'], ascending=True)
+cpvi['winner_2020'] = cpvi[['dem_20', 'rep_20']].apply(lambda x: 'Biden' if x['dem_20'] > x['rep_20'] else 'Trump', axis=1)
+biden_2020_states = (cpvi[cpvi['winner_2020'] == 'Biden']['State'].values)
+trump_2020_states = (cpvi[cpvi['winner_2020'] == 'Trump']['State'].values)
+
+def flip_chances():
+    trump_2020_states_sims = np.array(list({state: simulations[state] for state in trump_2020_states}.values()))
+    biden_2020_states_sims = np.array(list({state: simulations[state] for state in biden_2020_states}.values()))
+    def winner(margin):
+        # 1 = Harris, 0 = Trump
+        return 1 if margin > 0 else 0
+    trump_2020_winners = np.vectorize(winner)(trump_2020_states_sims)
+    biden_2020_winners = np.vectorize(winner)(biden_2020_states_sims)
+
+    flip_to_harris = []
+    flip_to_trump = []
+
+    for i in range(trump_2020_winners.shape[1]):
+        if (trump_2020_winners[:, i] == 1).any():
+            flip_to_harris.append(1)
+        else:
+            flip_to_harris.append(0)
+        if (biden_2020_winners[:, i] == 0).any():
+            flip_to_trump.append(1)
+        else:
+            flip_to_trump.append(0)
+    
+    flip_to_harris, flip_to_trump = np.array(flip_to_harris), np.array(flip_to_trump)
+
+    harris_flip_chance, trump_flip_chance = np.mean(flip_to_harris), np.mean(flip_to_trump) 
+
+    return harris_flip_chance, trump_flip_chance
+
+harris_flip_chance, trump_flip_chance = flip_chances()
