@@ -13,7 +13,7 @@ warnings.filterwarnings('ignore')
 
 # load_figure_template('cyborg')
 
-polls = pd.read_csv('https://projects.fivethirtyeight.com/polls-page/data/president_polls.csv')
+polls = pd.read_csv('data/polls/president_polls.csv')
 
 banned_pollsters = pd.read_csv('data/other/banned_pollsters.csv')['banned_pollsters']
 

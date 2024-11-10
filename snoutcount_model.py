@@ -25,7 +25,7 @@ polls_movement_df = pd.read_csv('data/fundamentals/polls_movement.csv') # Hand t
 # https://abcnews.go.com/538/538s-2024-presidential-election-forecast-works/story?id=113068753
 # Only includes polls movement up to 35 days
 election_day = datetime.date(2024, 11, 5)
-today = datetime.date.today()
+today = datetime.date(2024, 11, 5)
 days_left = (election_day - today).days
 
 expected_polling_shift = polls_movement_df[polls_movement_df['days_before_nov5'] == days_left]['movement'].values[0]

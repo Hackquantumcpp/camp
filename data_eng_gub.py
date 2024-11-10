@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 
 banned_pollsters = pd.read_csv('data/other/banned_pollsters.csv')['banned_pollsters']
 
-governor = pd.read_csv('https://projects.fivethirtyeight.com/polls-page/data/governor_polls.csv')
+governor = pd.read_csv('data/polls/governor_polls.csv')
 
 party_with_cand = governor['answer'] + ' (' + governor['party'] + ')'
 governor['party_with_cand'] = party_with_cand
