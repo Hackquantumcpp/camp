@@ -7,5 +7,5 @@
 - White evangelical percentages for states from [PRRI](https://ava.prri.org/#religious/2023/States/religion1/1). File itself is hand typed.
   - DC data from [2023 PRRI Census of American Religion](https://www.prri.org/research/census-2023-american-religion/)
   - District level percentages manually estimated utilizing data from [2023 PRRI Census of American Religion](https://www.prri.org/research/census-2023-american-religion/) and [Dave's Redistricting](https://davesredistricting.org)
-- State-level age and sex/gender data (`ACS_data.csv`) from [2023 American Community Survey](https://www.census.gov/programs-surveys/acs/)
+- State-level age and sex data (`ACS_data.csv`) from [2023 American Community Survey](https://www.census.gov/programs-surveys/acs/)
   - District-level median ages (`cd_median_ages.csv`) from [US Census' My Congressional District](https://www.census.gov/mycd/)
