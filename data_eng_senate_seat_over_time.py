@@ -72,7 +72,7 @@ def get_state_average_over_time(state):
     state_pivot = state_pivot[(state_pivot['end_date'] >= pd.to_datetime('2024-05-01'))]
     state_pivot = pipeline(state_pivot)
 
-    date_range = pd.date_range(start=state_pivot['end_date'].min(), end=datetime.datetime.today(), freq='d', inclusive='both')
+    date_range = pd.date_range(start=state_pivot['end_date'].min(), end=datetime.date(2024, 11, 5), freq='d', inclusive='both')
     for date in date_range:
         pipelined_df = state_avgs_pipeline(senate_np, state, date).replace({'NA':0})
         dem_avg = np.sum(pipelined_df['DEM'] * pipelined_df['total_weights'])
